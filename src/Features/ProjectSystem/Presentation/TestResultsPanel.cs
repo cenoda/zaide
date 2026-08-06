@@ -22,6 +22,7 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
     private readonly TextBlock _summaryText;
     private readonly TextBlock _statusText;
     private readonly Button _cancelButton;
+    private readonly TextBlock _emptyStateText;
     private readonly ListBox _list;
 
     public TestResultsPanel()
@@ -55,10 +56,22 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
             LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingXxs);
         _summaryText.TextWrapping = TextWrapping.Wrap;
 
-        _statusText = TextStyles.Caption("No test results yet.");
+        _statusText = TextStyles.Caption(string.Empty);
         _statusText.Margin = LayoutTokens.Inset(
             LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm);
         _statusText.TextWrapping = TextWrapping.Wrap;
+
+        // F7: Empty state with next-action guidance
+        _emptyStateText = new TextBlock
+        {
+            Text = "No test results yet.\n\nRun tests to see results here.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
+            IsVisible = true,
+        };
 
         _list = new ListBox
         {
@@ -101,6 +114,7 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
                 header,
                 _summaryText,
                 _statusText,
+                _emptyStateText,
                 _list,
             },
         };
@@ -132,7 +146,18 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
                 {
                     _statusText.Text = msg ?? string.Empty;
                     _statusText.IsVisible = !string.IsNullOrEmpty(msg);
+                    // F7: Also update empty state visibility
+                    UpdateEmptyStateVisibility();
                 }));
+
+            // F7: Update empty state when test cases change
+            d.Add(Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => ViewModel!.Cases.CollectionChanged += h,
+                    h => ViewModel!.Cases.CollectionChanged -= h)
+                .Subscribe(_ => UpdateEmptyStateVisibility()));
+
+            // F7: Initial empty state check
+            UpdateEmptyStateVisibility();
 
             d.Add(this.Bind(
                 ViewModel,
@@ -185,5 +210,18 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
             return;
 
         ViewModel.NavigateToCaseCommand.Execute(selected).Subscribe();
+    }
+
+    private void UpdateEmptyStateVisibility()
+    {
+        if (ViewModel is null)
+            return;
+
+        var hasStatus = !string.IsNullOrEmpty(ViewModel.StatusMessage);
+        var hasCases = ViewModel.Cases.Count > 0;
+        var showEmpty = !hasStatus && !hasCases;
+
+        _emptyStateText.IsVisible = showEmpty;
+        _list.IsVisible = !showEmpty;
     }
 }

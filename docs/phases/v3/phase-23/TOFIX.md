@@ -1,28 +1,30 @@
-# Phase 23 — TOFIX
+# Phase 23 — TOFIX [COMPLETED]
 
 ## Status
 
-**Active work board only.** No formal `IMPLEMENTATION_PLAN.md` and **no M0**
-gate. Phase 22 critical path remains complete (G5 PASS, 2026-08-05). This board
-is for urgent product fixes that should not wait for V4 planning or a residual
-debt program.
+**Phase 23 is complete.** All critical fixes landed. F8 (optional image preview) deferred to future consideration.
 
-Product readiness is still not claimed. V4 / successor-roadmap planning still
-requires a separate human decision. Phase 22.5 remains optional and separate.
+**Completed (2026-08-06):**
+- **XS/S wave:** F13, F11, F2, F4, F14 (ISSUE-009), F6, F15, F16 — all fixed
+- **M wave:** F1, F12, F9, F10, F3 — all fixed
+- **L/XL wave:** F5, F7 — fixed
 
-**Indexing only (2026-08-05):** findings F1–F13 catalogued from live screenshots
-and product direction; **difficulty indexed** (XS→XL). **No implementation in
-this pass.** Empty-evidence semantics (missing ≠ zero / not fabricated) remain
-intentional.
-
-**High-priority bug (2026-08-05):** **F14 → [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)**
-(production DI test wrote a test marker into user conversation drafts).
-
-**New finding (2026-08-06):** F15 catalogued from screenshot/report (multiple clicks on "Open Folder" spawn concurrent picker dialogs).
-
-**New finding (2026-08-06):** F16 catalogued from user report (Source Control commit message input box height fixed single-line with `AcceptsReturn = false`).
-
-**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave complete (F1, F12, F9, F10, F3 fixed). L/XL wave: F5 fixed; remaining: F7 → F8 (optional).**
+**Summary of fixes:**
+- F1: Agent inspect host (side sheet layout)
+- F2: Empty-state caption deduplication
+- F3: Empty inspect chrome reduction
+- F4: Filter vs transparency toolbar separation
+- F5: Agent/transparency config moved to Settings (schema v4)
+- F6: Bottom panel content MinHeight floor
+- F7: Bottom panel mode strip styling + empty-state guidance
+- F9: File tree highlight tail fix
+- F10: Icon system unification (Lucide.Avalonia)
+- F11: Status bar segment actions
+- F12: Source Control selection + Unstage All
+- F13: Settings panel alignment
+- F14: Production DI test isolation (ISSUE-009)
+- F15: Open Folder re-entrancy guard
+- F16: Commit message multiline input
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -462,7 +464,7 @@ capture off” surface.
 
 ### F7 — Bottom panel: only Terminal feels usable; other modes have no clear product job
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — Mode strip buttons now show visual state: active mode has primary text color + accent bottom border, inactive modes have secondary color + no border. All four non-Terminal panels (Problems, Output, Test Results, Debug) now display friendly empty-state guidance text explaining their purpose and next steps when empty. Implementation: BottomPanelHost.cs (mode button styling), ProblemsPanel.cs, OutputPanel.cs, TestResultsPanel.cs, DebugPanel.cs (empty state text blocks with visibility logic).
 
 **Severity:** Medium–High (product clarity / discoverability)
 **Difficulty:** L
@@ -947,9 +949,11 @@ against bottom-panel splitter drag; XS/S wave complete.
 **Session F1 landed (2026-08-06):** Dedicated `AgentInspectHost` side sheet;
 chat Star band preserved; open-flag exclusivity unchanged. F3 not bundled.
 
+**Session F7 landed (2026-08-06):** Bottom panel mode strip visual styling (active mode has primary text + accent border) + empty-state guidance text for Problems/Output/TestResults/Debug panels. L wave complete.
+
 Remaining difficulty-first waves:
 
-1. **L/XL:** F7 → F8 (optional)
+1. **L/XL:** F8 (optional)
 
 F5 complete (2026-08-06). One reviewable commit per coherent outcome.
 

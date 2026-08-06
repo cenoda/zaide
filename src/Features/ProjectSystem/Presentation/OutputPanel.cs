@@ -22,6 +22,7 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
 {
     private readonly TextBlock _statusText;
     private readonly Button _cancelButton;
+    private readonly TextBlock _emptyStateText;
     private readonly ListBox _list;
 
     public OutputPanel()
@@ -54,6 +55,18 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
         _statusText.Margin = LayoutTokens.Inset(
             LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm);
         _statusText.TextWrapping = TextWrapping.Wrap;
+
+        // F7: Empty state with next-action guidance
+        _emptyStateText = new TextBlock
+        {
+            Text = "No output yet.\n\nBuild or run the project to see results here.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
+            IsVisible = false,
+        };
 
         _list = new ListBox
         {
@@ -94,6 +107,7 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
             {
                 header,
                 _statusText,
+                _emptyStateText,
                 _list,
             },
         };
@@ -144,7 +158,15 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
                 {
                     _statusText.Text = msg ?? string.Empty;
                     _statusText.IsVisible = !string.IsNullOrEmpty(msg);
+                    // F7: Also update empty state visibility
+                    UpdateEmptyStateVisibility();
                 }));
+
+            // F7: Update empty state when lines are added/removed
+            d.Add(Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => ViewModel!.Lines.CollectionChanged += h,
+                    h => ViewModel!.Lines.CollectionChanged -= h)
+                .Subscribe(_ => UpdateEmptyStateVisibility()));
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.IsOperationActive)
                 .Subscribe(active => _cancelButton.IsVisible = active));
@@ -157,5 +179,18 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
             _cancelButton.Click += OnCancelClick;
             d.Add(Disposable.Create(() => _cancelButton.Click -= OnCancelClick));
         });
+    }
+
+    private void UpdateEmptyStateVisibility()
+    {
+        if (ViewModel is null)
+            return;
+
+        var hasStatus = !string.IsNullOrEmpty(ViewModel.StatusMessage);
+        var hasLines = ViewModel.Lines.Count > 0;
+        var showEmpty = !hasStatus && !hasLines;
+
+        _emptyStateText.IsVisible = showEmpty;
+        _list.IsVisible = !showEmpty;
     }
 }

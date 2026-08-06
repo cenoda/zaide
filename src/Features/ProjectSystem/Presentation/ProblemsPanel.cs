@@ -22,6 +22,7 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
 {
     private readonly TextBlock _statusText;
     private readonly TextBlock _countText;
+    private readonly TextBlock _emptyStateText;
     private readonly ListBox _list;
 
     public ProblemsPanel()
@@ -48,6 +49,18 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
         _statusText.Margin = LayoutTokens.Inset(
             LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm);
         _statusText.TextWrapping = TextWrapping.Wrap;
+
+        // F7: Empty state with next-action guidance
+        _emptyStateText = new TextBlock
+        {
+            Text = "No problems detected.\n\nWrite code or build the project to see diagnostics here.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
+            IsVisible = false,
+        };
 
         _list = new ListBox
         {
@@ -87,6 +100,7 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
             {
                 header,
                 _statusText,
+                _emptyStateText,
                 _list,
             },
         };
@@ -110,10 +124,17 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
                 {
                     _statusText.Text = msg ?? string.Empty;
                     _statusText.IsVisible = !string.IsNullOrEmpty(msg);
+                    // F7: Also update empty state visibility
+                    UpdateEmptyStateVisibility();
                 }));
 
             d.Add(this.WhenAnyValue(x => x.ViewModel!.ProblemCount)
-                .Subscribe(count => _countText.Text = count.ToString()));
+                .Subscribe(count =>
+                {
+                    _countText.Text = count.ToString();
+                    // F7: Show empty state when no problems and no error status
+                    UpdateEmptyStateVisibility();
+                }));
 
             d.Add(this.Bind(
                 ViewModel,
@@ -153,5 +174,18 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
             return;
 
         ViewModel.NavigateToProblemCommand.Execute(selected).Subscribe();
+    }
+
+    private void UpdateEmptyStateVisibility()
+    {
+        if (ViewModel is null)
+            return;
+
+        var hasStatus = !string.IsNullOrEmpty(ViewModel.StatusMessage);
+        var hasProblems = ViewModel.ProblemCount > 0;
+        var showEmpty = !hasStatus && !hasProblems;
+
+        _emptyStateText.IsVisible = showEmpty;
+        _list.IsVisible = !showEmpty;
     }
 }

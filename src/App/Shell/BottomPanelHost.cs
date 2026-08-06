@@ -26,6 +26,13 @@ internal sealed class BottomPanelHost
     private RowDefinition? _panelRow;
     private MainWindowViewModel? _viewModel;
 
+    // Mode strip buttons for visual state updates
+    private Button? _terminalButton;
+    private Button? _problemsButton;
+    private Button? _outputButton;
+    private Button? _testResultsButton;
+    private Button? _debugButton;
+
     public BottomPanelHost(ISettingsService settings)
     {
         TerminalTabHost = new TerminalTabHost(settings);
@@ -50,30 +57,35 @@ internal sealed class BottomPanelHost
             LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, 0, LayoutTokens.SpacingXxs),
             fontSizeSm: false,
             onClick: () => _viewModel?.SwitchToTerminalBottomCommand.Execute().Subscribe());
+        _terminalButton = terminalTabButton;
 
         var problemsTabButton = CreateModeButton(
             "Problems",
             LayoutTokens.Inset(LayoutTokens.SpacingXxs, LayoutTokens.SpacingXxs, 0, LayoutTokens.SpacingXxs),
             fontSizeSm: false,
             onClick: () => _viewModel?.SwitchToProblemsBottomCommand.Execute().Subscribe());
+        _problemsButton = problemsTabButton;
 
         var outputTabButton = CreateModeButton(
             "Output",
             margin: default,
             fontSizeSm: true,
             onClick: () => _viewModel?.SwitchToOutputBottomCommand.Execute().Subscribe());
+        _outputButton = outputTabButton;
 
         var testResultsTabButton = CreateModeButton(
             "Test Results",
             margin: default,
             fontSizeSm: true,
             onClick: () => _viewModel?.SwitchToTestResultsBottomCommand.Execute().Subscribe());
+        _testResultsButton = testResultsTabButton;
 
         var debugTabButton = CreateModeButton(
             "Debug",
             margin: default,
             fontSizeSm: true,
             onClick: () => _viewModel?.SwitchToDebugBottomCommand.Execute().Subscribe());
+        _debugButton = debugTabButton;
 
         var bottomModeStrip = new StackPanel
         {
@@ -170,6 +182,36 @@ internal sealed class BottomPanelHost
 
         disposables.Add(viewModel.WhenAnyValue(x => x.BottomPanelMode)
             .Subscribe(ApplyBottomPanelMode));
+
+        // F7: Wire mode strip button visual states
+        disposables.Add(viewModel.WhenAnyValue(x => x.IsTerminalBottomMode)
+            .Subscribe(active => UpdateModeButtonStyle(_terminalButton!, active)));
+
+        disposables.Add(viewModel.WhenAnyValue(x => x.IsProblemsBottomMode)
+            .Subscribe(active => UpdateModeButtonStyle(_problemsButton!, active)));
+
+        disposables.Add(viewModel.WhenAnyValue(x => x.IsOutputBottomMode)
+            .Subscribe(active => UpdateModeButtonStyle(_outputButton!, active)));
+
+        disposables.Add(viewModel.WhenAnyValue(x => x.IsTestResultsBottomMode)
+            .Subscribe(active => UpdateModeButtonStyle(_testResultsButton!, active)));
+
+        disposables.Add(viewModel.WhenAnyValue(x => x.IsDebugBottomMode)
+            .Subscribe(active => UpdateModeButtonStyle(_debugButton!, active)));
+    }
+
+    private static void UpdateModeButtonStyle(Button button, bool isActive)
+    {
+        if (button is null)
+            return;
+
+        var activeBrush = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"] ?? Brushes.White;
+        var inactiveBrush = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"] ?? Brushes.Gray;
+        var accentBrush = (IBrush?)Application.Current!.Resources["AccentBrush"] ?? Brushes.CornflowerBlue;
+
+        button.Foreground = isActive ? activeBrush : inactiveBrush;
+        button.BorderBrush = isActive ? accentBrush : Brushes.Transparent;
+        button.BorderThickness = isActive ? new Thickness(0, 0, 0, 2) : new Thickness(0);
     }
 
     internal void ApplyBottomPanelVisibility(bool visible)
