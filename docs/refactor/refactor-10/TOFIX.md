@@ -60,8 +60,8 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 |---|---|---|
 | M0 — plan and archive | done | docs review |
 | M1 — theme variant infrastructure | done | key-parity test + forced runtime variant flip |
-| M2 — semantic tokens and both ramps | next | contrast-ratio tests + full suite |
-| M3 — literal replacement and guard | pending | `scripts/check-theme-tokens.sh` |
+| M2 — semantic tokens and both ramps | done | contrast-ratio tests + full suite |
+| M3 — literal replacement and guard | next | `scripts/check-theme-tokens.sh` |
 | M4 — shared control layer | pending | full suite + interaction walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
@@ -69,8 +69,25 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 
 - None. All four scoping decisions were confirmed on 2026-08-06.
 
+## M2 result (2026-08-06)
+
+- Added ~40 semantic token keys to both `Light.axaml` and `Dark.axaml`: Surface
+  (Canvas, Raised1–3, Glass, GlassFallback, Overlay), Border (Subtle, Default,
+  Strong, Focus), Text (Tertiary, OnAccent, Disabled), Accent (base, Hover,
+  Pressed, SubtleBg), State (Danger, Info + 5 SubtleBg), Interaction (Overlay
+  Hover/Pressed/Selected), and Elevation (ShadowSm/Md/Lg).
+- Light/Dark key sets remain identical (ThemeTokenParityTests enforces).
+- `Shared.axaml` extended with `LineHeightSm/Md/Lg`.
+- `TypographyTokens` expanded: 5 sizes (Xs–Xl), 3 line heights, 4 weights.
+- `TextStyles` now routes through `TypographyTokens` and `ThemeBinding.GetColor`;
+  no more hardcoded font sizes or manual brush resolution.
+- `Elevation.cs` added: theme-aware `BoxShadows` accessors with opaque fallbacks.
+- `ThemeBinding.CurrentVariant` accessor exposed for `Elevation`.
+- Contrast ratios verified: body text ≥ 4.5:1, secondary/borders ≥ 3:1, in both ramps.
+- All 4062 tests pass.
+
 ## Next task
 
-M2: author the semantic token set (Surface/Border/Text/Accent/State/Interaction/
-Elevation) in both ramps with an identical key set, restore the typography scale
-and `Elevation.cs`, and wire `TypographyTokens` into `TextStyles`.
+M3: replace hardcoded color literals and raw `new Thickness(` calls in
+`src/**/*.cs` with token references, and add `scripts/check-theme-tokens.sh`
+guard wired into the `Makefile` and CI path.
