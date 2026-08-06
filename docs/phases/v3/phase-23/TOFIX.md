@@ -543,7 +543,12 @@ when a screenshot under the workspace is selected
 
 ### F9 — File tree selection/hover highlight lags the pointer (“tail”)
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — instant hover (no `Animations.RunAsync` /
+  `HoverBackground` tail), single `_hoveredRow` tracking with stale-exit
+  guard, and targeted `RepaintRowsForSelectionChange` instead of full-tree
+  `RepaintAllFileTreeRows`. Parent-folder tint preserved. Covered by
+  `Phase23FileTreeHoverSelectionTests`. Manual repro: fast pointer scrub
+  over a long root file list no longer leaves a multi-row highlight trail.
 
 **Severity:** Medium (interaction polish; looks like a paint bug)
 **Difficulty:** M
