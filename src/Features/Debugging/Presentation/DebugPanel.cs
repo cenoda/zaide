@@ -49,7 +49,8 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
         {
             Text = "No active debug session.\n\nStart the debugger to see console output, call stack, and variables here.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+            Foreground = (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"]
+                ?? Brushes.Gray,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
@@ -155,9 +156,80 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
         };
         DockPanel.SetDock(variablesHeader, Dock.Top);
 
-        DockPanel.SetDock(variablesHeader, Dock.Top);
+        _sectionsGrid = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) },
+                new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                new ColumnDefinition { Width = new GridLength(4, GridUnitType.Pixel) },
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+            },
+            Children = { consoleSection, callStackSection, variablesSection },
+        };
+        Grid.SetColumn(consoleSection, 0);
+        Grid.SetColumn(callStackSection, 2);
+        Grid.SetColumn(variablesSection, 4);
 
-        var sectionsGrid = new Grid
+        Content = new DockPanel
+        {
+            LastChildFill = true,
+            Children = { _statusText, _emptyStateText, _sectionsGrid },
+        };
+        DockPanel.SetDock(_statusText, Dock.Top);
+
+        this.WhenActivated(d =>
+        {
+            if (ViewModel is null)
+                return;
+
+            d.Add(this.WhenAnyValue(x => x.ViewModel)
+                .Where(vm => vm is not null)
+                .Subscribe(vm =>
+                {
+                    _consoleList.ItemsSource = vm!.Lines;
+                }));
+
+            d.Add(Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => ViewModel!.Lines.CollectionChanged += h,
+                    h => ViewModel!.Lines.CollectionChanged -= h)
+                .Subscribe(e =>
+                {
+                    if (e.EventArgs.Action != NotifyCollectionChangedAction.Add ||
+                        e.EventArgs.NewItems is not { Count: > 0 })
+                        return;
+
+                    var scrollViewer = _consoleList.FindDescendantOfType<ScrollViewer>();
+                    if (scrollViewer is null)
+                        return;
+
+                    const double threshold = 20.0;
+                    var maxOffset = scrollViewer.ScrollBarMaximum.Y;
+                    if (scrollViewer.Offset.Y >= maxOffset - threshold)
+                        _consoleList.ScrollIntoView(e.EventArgs.NewItems[^1]!);
+                }));
+
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.StatusMessage)
+                .Subscribe(msg =>
+                {
+                    _statusText.Text = msg ?? string.Empty;
+                    _statusText.IsVisible = !string.IsNullOrEmpty(msg);
+                    UpdateEmptyStateVisibility();
+                }));
+
+            d.Add(this.WhenAnyValue(x => x.ViewModel!.State)
+                .Subscribe(_ => UpdateEmptyStateVisibility()));
+
+            d.Add(Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                    h => ViewModel!.Lines.CollectionChanged += h,
+                    h => ViewModel!.Lines.CollectionChanged -= h)
+                .Subscribe(_ => UpdateEmptyStateVisibility()));
+
+            BindStackProjection(d);
+        });
+    }
+
     private void BindStackProjection(CompositeDisposable d)
     {
         d.Add(this.WhenAnyValue(x => x.ViewModel!.StackProjection.Threads)
