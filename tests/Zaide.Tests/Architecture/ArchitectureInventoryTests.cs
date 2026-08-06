@@ -50,7 +50,8 @@ public sealed class ArchitectureInventoryTests
         // Refactor 8 M5: +2 internal SettingsPanelAttachHost, ShellOverlayFocusWiring.
         // Phase 14 M8: −1 internal AgentTownhallMirrorCoordinator.
         Assert.Equal((24, 14, 10), byNamespace["Zaide.App.Shell"]);
-        Assert.Equal((5, 2, 3), byNamespace["Zaide.UI.DesignSystem"]);
+        // Refactor 10 M2: +1 internal Elevation.
+        Assert.Equal((6, 2, 4), byNamespace["Zaide.UI.DesignSystem"]);
         // Phase 22/23 settings v4: +1 public AgentsSettings, +1 internal type (12p/1i → 13 total).
         Assert.Equal((13, 12, 1), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);

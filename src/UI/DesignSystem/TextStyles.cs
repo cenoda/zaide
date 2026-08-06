@@ -1,7 +1,7 @@
-using Avalonia.Controls;
-using Avalonia.Media;
 using System;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
 
 namespace Zaide.UI.DesignSystem
 {
@@ -11,66 +11,66 @@ namespace Zaide.UI.DesignSystem
         private static readonly Color SecondaryFallbackColor = Color.Parse("#8B95A5");
         private static readonly Color PrimaryAccentFallbackColor = Color.Parse("#066ADB");
 
-        private static IBrush GetPrimaryBrush() =>
-            ResolveBrush("TextPrimaryBrush", PrimaryFallbackColor);
+        /// <summary>
+        /// Test-only application resolver. Defaults to <see cref="Application.Current"/>.
+        /// Tests override this to exercise the navy fallback path deterministically
+        /// without mutating global Avalonia state.
+        /// </summary>
+        internal static Func<Application?>? ApplicationResolver { get; set; }
 
-        private static IBrush GetSecondaryBrush() =>
-            ResolveBrush("TextSecondaryBrush", SecondaryFallbackColor);
-
-        private static IBrush GetPrimaryAccentBrush() =>
-            ResolveBrush("PrimaryAccentBrush", PrimaryAccentFallbackColor);
-
-        private static IBrush ResolveBrush(string resourceKey, Color fallback)
+        private static IBrush ResolveBrush(string colorKey, Color fallback)
         {
+            var application = (ApplicationResolver ?? (() => Application.Current))();
+            if (application is null)
+            {
+                // No application: fall back to the navy palette rather than
+                // throwing, so views always render readable text.
+                return new SolidColorBrush(fallback);
+            }
+
             try
             {
-                if (Application.Current?.Resources[resourceKey] is SolidColorBrush resourceBrush)
-                {
-                    // Return a detached copy so unit tests do not observe
-                    // dispatcher-owned brushes created by a shared Application.
-                    return new SolidColorBrush(resourceBrush.Color, resourceBrush.Opacity);
-                }
+                // Theme-aware, resolved from the active variant. Reading a
+                // Color resource (rather than a dispatcher-owned brush) keeps
+                // this safe off the UI thread.
+                return new SolidColorBrush(ThemeBinding.GetColor(colorKey));
             }
             catch (InvalidOperationException)
             {
-                // Unit tests may share an Application created on another
-                // dispatcher thread. In that case the palette fallback is safer
-                // than touching dispatcher-owned resources.
+                return new SolidColorBrush(fallback);
             }
-
-            return new SolidColorBrush(fallback);
         }
 
         public static TextBlock Header(string text) => new()
         {
             Text = text,
-            FontSize = 13,
-            FontWeight = FontWeight.SemiBold,
-            Foreground = GetPrimaryBrush()
+            FontSize = TypographyTokens.FontSizeMd,
+            FontWeight = TypographyTokens.FontWeightSemiBold,
+            Foreground = ResolveBrush("TextPrimaryBrushColor", PrimaryFallbackColor)
         };
 
         public static TextBlock Body(string text) => new()
         {
             Text = text,
-            FontSize = 13,
-            FontWeight = FontWeight.Normal,
-            Foreground = GetPrimaryBrush()
+            FontSize = TypographyTokens.FontSizeMd,
+            FontWeight = TypographyTokens.FontWeightRegular,
+            Foreground = ResolveBrush("TextPrimaryBrushColor", PrimaryFallbackColor)
         };
 
         public static TextBlock Caption(string text) => new()
         {
             Text = text,
-            FontSize = 11,
-            FontWeight = FontWeight.Normal,
-            Foreground = GetSecondaryBrush()
+            FontSize = TypographyTokens.FontSizeXs,
+            FontWeight = TypographyTokens.FontWeightRegular,
+            Foreground = ResolveBrush("TextSecondaryBrushColor", SecondaryFallbackColor)
         };
 
         public static TextBlock Brand(string text) => new()
         {
             Text = text,
-            FontSize = 12,
-            FontWeight = FontWeight.SemiBold,
-            Foreground = GetPrimaryAccentBrush()
+            FontSize = TypographyTokens.FontSizeSm,
+            FontWeight = TypographyTokens.FontWeightSemiBold,
+            Foreground = ResolveBrush("PrimaryAccentBrushColor", PrimaryAccentFallbackColor)
         };
     }
 }

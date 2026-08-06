@@ -2,7 +2,8 @@
 
 ## Status
 
-M0 (plan and archive) is complete. M1 is the next task.
+M0 (plan and archive) and M1 (theme variant infrastructure) are complete. M2 is
+the next task.
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -58,8 +59,8 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | Milestone | State | Gate |
 |---|---|---|
 | M0 — plan and archive | done | docs review |
-| M1 — theme variant infrastructure | next | key-parity test + forced runtime variant flip |
-| M2 — semantic tokens and both ramps | pending | contrast-ratio tests + full suite |
+| M1 — theme variant infrastructure | done | key-parity test + forced runtime variant flip |
+| M2 — semantic tokens and both ramps | next | contrast-ratio tests + full suite |
 | M3 — literal replacement and guard | pending | `scripts/check-theme-tokens.sh` |
 | M4 — shared control layer | pending | full suite + interaction walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
@@ -70,7 +71,6 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 
 ## Next task
 
-M1: split `App.axaml` into `Tokens/Light.axaml`, `Tokens/Dark.axaml`, and
-`Tokens/Shared.axaml` under `ResourceDictionary.ThemeDictionaries`, remove the
-variant pin, add `ThemeBinding`, and eliminate the four `static readonly` brush
-caches.
+M2: author the semantic token set (Surface/Border/Text/Accent/State/Interaction/
+Elevation) in both ramps with an identical key set, restore the typography scale
+and `Elevation.cs`, and wire `TypographyTokens` into `TextStyles`.

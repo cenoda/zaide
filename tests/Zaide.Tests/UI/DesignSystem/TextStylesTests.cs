@@ -9,6 +9,21 @@ namespace Zaide.Tests.UI.DesignSystem
 {
     public class TextStylesTests
     {
+        // The fallback tests temporarily route TextStyles through a null
+        // application so it exercises its navy-palette fallback deterministically.
+        private static void WithNoApplication(Action action)
+        {
+            var previous = TextStyles.ApplicationResolver;
+            try
+            {
+                TextStyles.ApplicationResolver = () => null;
+                action();
+            }
+            finally
+            {
+                TextStyles.ApplicationResolver = previous;
+            }
+        }
         [Fact]
         public void Header_UsesHeaderSizeAndWeight()
         {
@@ -105,19 +120,25 @@ namespace Zaide.Tests.UI.DesignSystem
         public void Foreground_Header_FallsBackToNavyPrimary_WhenNoResource()
         {
             // Without Avalonia resources, Header falls back to #E3E4F4
-            // (TextPrimaryBrush fallback). This proves the fallback resolves
+            // (TextPrimary fallback). This proves the fallback resolves
             // to the navy palette, not an arbitrary color.
-            var header = TextStyles.Header("h");
-            var brush = Assert.IsType<SolidColorBrush>(header.Foreground);
-            Assert.Equal(Color.Parse("#E3E4F4"), brush.Color);
+            WithNoApplication(() =>
+            {
+                var header = TextStyles.Header("h");
+                var brush = Assert.IsType<SolidColorBrush>(header.Foreground);
+                Assert.Equal(Color.Parse("#E3E4F4"), brush.Color);
+            });
         }
 
         [Fact]
         public void Foreground_Body_FallsBackToNavyPrimary_WhenNoResource()
         {
-            var body = TextStyles.Body("b");
-            var brush = Assert.IsType<SolidColorBrush>(body.Foreground);
-            Assert.Equal(Color.Parse("#E3E4F4"), brush.Color);
+            WithNoApplication(() =>
+            {
+                var body = TextStyles.Body("b");
+                var brush = Assert.IsType<SolidColorBrush>(body.Foreground);
+                Assert.Equal(Color.Parse("#E3E4F4"), brush.Color);
+            });
         }
 
         [Fact]
@@ -125,21 +146,27 @@ namespace Zaide.Tests.UI.DesignSystem
         {
             // Caption must use the muted secondary color, not the primary
             // text color. This guards against accidentally routing Caption
-            // through TextPrimaryBrush.
-            var caption = TextStyles.Caption("c");
-            var brush = Assert.IsType<SolidColorBrush>(caption.Foreground);
-            Assert.Equal(Color.Parse("#8B95A5"), brush.Color);
+            // through the primary brush.
+            WithNoApplication(() =>
+            {
+                var caption = TextStyles.Caption("c");
+                var brush = Assert.IsType<SolidColorBrush>(caption.Foreground);
+                Assert.Equal(Color.Parse("#8B95A5"), brush.Color);
+            });
         }
 
         [Fact]
         public void Foreground_Brand_FallsBackToAccent_WhenNoResource()
         {
-            // Brand must use the accent color (PrimaryAccentBrush fallback),
+            // Brand must use the accent color (PrimaryAccent fallback),
             // not the primary text color. Without this check, the "powered by
             // Zaide" app name would lose its brand color.
-            var brand = TextStyles.Brand("br");
-            var brush = Assert.IsType<SolidColorBrush>(brand.Foreground);
-            Assert.Equal(Color.Parse("#066ADB"), brush.Color);
+            WithNoApplication(() =>
+            {
+                var brand = TextStyles.Brand("br");
+                var brush = Assert.IsType<SolidColorBrush>(brand.Foreground);
+                Assert.Equal(Color.Parse("#066ADB"), brush.Color);
+            });
         }
 
         [Fact]

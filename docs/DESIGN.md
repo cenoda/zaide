@@ -105,7 +105,7 @@ var animation = new Animation
 ---
 
 ## 5. Typography (Refactor 4)
-- Global scale: 3 weights (Regular/SemiBold/Bold) × 4 sizes (11/12/13/15 px) via `TextStyles` helper.
+- Global scale: 3 weights (Regular/SemiBold/Bold) × 5 sizes (11/12/13/15/18 px) via `TypographyTokens` and `TextStyles`.
 - All `TextBlock` usage routes through `TextStyles` (no direct `FontSize=` / `FontWeight=` literals in Views).
 - Implemented per Refactor 4.
 

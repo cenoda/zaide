@@ -35,7 +35,7 @@ public class ThemeTokenParityTests
     public void DarkRamp_MeetsTextContrastMinimums()
     {
         var app = ReactiveUiTestBootstrap.EnsureApplication();
-        AssertTextContrastMinimums(GetThemeDictionary(app, ThemeVariant.Dark), "Dark");
+        AssertContrastMinimums(GetThemeDictionary(app, ThemeVariant.Dark), "Dark");
     }
 
     [Fact]
@@ -70,30 +70,37 @@ public class ThemeTokenParityTests
             .OrderBy(key => key, StringComparer.Ordinal)
             .ToArray();
 
-    private static void AssertTextContrastMinimums(ResourceDictionary dictionary, string variantName)
+    private static void AssertContrastMinimums(ResourceDictionary dictionary, string variantName)
     {
-        var surface = GetColor(dictionary, "SurfaceBaseBrushColor");
-        var textPrimary = GetColor(dictionary, "TextPrimaryBrushColor");
-        var textSecondary = GetColor(dictionary, "TextSecondaryBrushColor");
+        // Read Color resources (not brushes) so these assertions are safe off
+        // the UI thread: reading a dispatcher-owned SolidColorBrush.Color throws.
+        var surface = GetColor(dictionary, "SurfaceCanvasColor");
+        var textPrimary = GetColor(dictionary, "TextPrimaryColor");
+        var textSecondary = GetColor(dictionary, "TextSecondaryColor");
+        var textTertiary = GetColor(dictionary, "TextTertiaryColor");
+        var separator = GetColor(dictionary, "SeparatorBrushColor");
+        var borderDefault = GetColor(dictionary, "BorderDefaultColor");
+        var textOnAccent = GetColor(dictionary, "TextOnAccentColor");
+        var accent = GetColor(dictionary, "AccentColor");
 
         Assert.True(
             ContrastRatio(textPrimary, surface) >= 4.5,
-            $"{variantName} TextPrimary on SurfaceBase must be >= 4.5:1.");
+            $"{variantName} TextPrimary on SurfaceCanvas must be >= 4.5:1.");
         Assert.True(
             ContrastRatio(textSecondary, surface) >= 3.0,
-            $"{variantName} TextSecondary on SurfaceBase must be >= 3:1.");
-    }
-
-    private static void AssertContrastMinimums(ResourceDictionary dictionary, string variantName)
-    {
-        AssertTextContrastMinimums(dictionary, variantName);
-
-        var surface = GetColor(dictionary, "SurfaceBaseBrushColor");
-        var separator = GetColor(dictionary, "SeparatorBrushColor");
-
+            $"{variantName} TextSecondary on SurfaceCanvas must be >= 3:1.");
+        Assert.True(
+            ContrastRatio(textTertiary, surface) >= 3.0,
+            $"{variantName} TextTertiary on SurfaceCanvas must be >= 3:1.");
         Assert.True(
             ContrastRatio(separator, surface) >= 3.0,
-            $"{variantName} Separator on SurfaceBase must be >= 3:1.");
+            $"{variantName} Separator on SurfaceCanvas must be >= 3:1.");
+        Assert.True(
+            ContrastRatio(borderDefault, surface) >= 3.0,
+            $"{variantName} BorderDefault on SurfaceCanvas must be >= 3:1.");
+        Assert.True(
+            ContrastRatio(textOnAccent, accent) >= 4.5,
+            $"{variantName} TextOnAccent on Accent must be >= 4.5:1.");
     }
 
     private static Color GetColor(ResourceDictionary dictionary, string key)

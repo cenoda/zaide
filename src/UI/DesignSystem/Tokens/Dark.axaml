@@ -18,7 +18,7 @@
     <Color x:Key="SurfaceRaisedBrushColor">#243352</Color>
     <Color x:Key="TextPrimaryBrushColor">#E3E4F4</Color>
     <Color x:Key="TextSecondaryBrushColor">#8B95A5</Color>
-    <Color x:Key="SeparatorBrushColor">#070C16</Color>
+    <Color x:Key="SeparatorBrushColor">#55617C</Color>
     <Color x:Key="IdleBrushColor">#5A6070</Color>
 
     <!-- Palette brushes (derived from the colors above) -->
@@ -36,6 +36,88 @@
     <SolidColorBrush x:Key="IdleBrush" Color="{StaticResource IdleBrushColor}" />
     <!-- BusyBrush reuses WarningBrushColor (amber) for visual consistency -->
     <SolidColorBrush x:Key="BusyBrush" Color="{StaticResource WarningBrushColor}" />
+
+    <!-- ============ Semantic tokens (Refactor 10 M2) ============ -->
+
+    <!-- Surface: 4 elevation tiers + glass + overlay -->
+    <Color x:Key="SurfaceCanvasColor">#0A0F19</Color>
+    <SolidColorBrush x:Key="SurfaceCanvasBrush" Color="{StaticResource SurfaceCanvasColor}" />
+    <Color x:Key="SurfaceRaised1Color">#1A2540</Color>
+    <SolidColorBrush x:Key="SurfaceRaised1Brush" Color="{StaticResource SurfaceRaised1Color}" />
+    <Color x:Key="SurfaceRaised2Color">#101A2A</Color>
+    <SolidColorBrush x:Key="SurfaceRaised2Brush" Color="{StaticResource SurfaceRaised2Color}" />
+    <Color x:Key="SurfaceRaised3Color">#243352</Color>
+    <SolidColorBrush x:Key="SurfaceRaised3Brush" Color="{StaticResource SurfaceRaised3Color}" />
+    <!-- Translucent navy glass over backdrop blur -->
+    <SolidColorBrush x:Key="SurfaceGlassBrush" Color="#1A2540" Opacity="0.60" />
+    <!-- Opaque fallback when blur is unavailable -->
+    <Color x:Key="SurfaceGlassFallbackColor">#162035</Color>
+    <SolidColorBrush x:Key="SurfaceGlassFallbackBrush" Color="{StaticResource SurfaceGlassFallbackColor}" />
+    <!-- Translucent overlay dim for modal scrims -->
+    <SolidColorBrush x:Key="SurfaceOverlayBrush" Color="#0A0F19" Opacity="0.40" />
+
+    <!-- Border: 1px separators and control borders, plus focus ring -->
+    <Color x:Key="BorderSubtleColor">#55617C</Color>
+    <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}" />
+    <Color x:Key="BorderDefaultColor">#516894</Color>
+    <SolidColorBrush x:Key="BorderDefaultBrush" Color="{StaticResource BorderDefaultColor}" />
+    <Color x:Key="BorderStrongColor">#7288AE</Color>
+    <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
+    <!-- Translucent accent focus ring -->
+    <SolidColorBrush x:Key="BorderFocusBrush" Color="#066ADB" Opacity="0.40" />
+
+    <!-- Text: 3-level hierarchy + on-accent + disabled.
+         TextPrimaryBrush/TextSecondaryBrush already exist in the palette section
+         with identical values, so only the semantic Color aliases are added. -->
+    <Color x:Key="TextPrimaryColor">#E3E4F4</Color>
+    <Color x:Key="TextSecondaryColor">#8B95A5</Color>
+    <Color x:Key="TextTertiaryColor">#657080</Color>
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}" />
+    <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccentColor}" />
+    <Color x:Key="TextDisabledColor">#4A5568</Color>
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
+
+    <!-- Accent: base + hover + pressed + subtle background -->
+    <Color x:Key="AccentColor">#066ADB</Color>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <Color x:Key="AccentHoverColor">#1A7AE0</Color>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
+    <Color x:Key="AccentPressedColor">#2488F5</Color>
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="{StaticResource AccentPressedColor}" />
+    <Color x:Key="AccentSubtleBgColor">#0D1F3D</Color>
+    <SolidColorBrush x:Key="AccentSubtleBgBrush" Color="{StaticResource AccentSubtleBgColor}" />
+
+    <!-- State: status colors + subtle backgrounds.
+         SuccessBrush/WarningBrush/IdleBrush already exist in the palette section
+         with identical values, so only the semantic Color aliases are added. -->
+    <Color x:Key="SuccessColor">#28A745</Color>
+    <Color x:Key="WarningColor">#FCBB47</Color>
+    <Color x:Key="DangerColor">#E53E3E</Color>
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+    <Color x:Key="InfoColor">#4299E1</Color>
+    <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}" />
+    <Color x:Key="IdleColor">#5A6070</Color>
+    <Color x:Key="SuccessSubtleBgColor">#0D2818</Color>
+    <SolidColorBrush x:Key="SuccessSubtleBgBrush" Color="{StaticResource SuccessSubtleBgColor}" />
+    <Color x:Key="WarningSubtleBgColor">#2D1F05</Color>
+    <SolidColorBrush x:Key="WarningSubtleBgBrush" Color="{StaticResource WarningSubtleBgColor}" />
+    <Color x:Key="DangerSubtleBgColor">#2D0A0A</Color>
+    <SolidColorBrush x:Key="DangerSubtleBgBrush" Color="{StaticResource DangerSubtleBgColor}" />
+    <Color x:Key="InfoSubtleBgColor">#0A1A2D</Color>
+    <SolidColorBrush x:Key="InfoSubtleBgBrush" Color="{StaticResource InfoSubtleBgColor}" />
+    <Color x:Key="IdleSubtleBgColor">#15192A</Color>
+    <SolidColorBrush x:Key="IdleSubtleBgBrush" Color="{StaticResource IdleSubtleBgColor}" />
+
+    <!-- Interaction: translucent hover/pressed/selected overlays -->
+    <SolidColorBrush x:Key="OverlayHoverBrush" Color="#FFFFFF" Opacity="0.06" />
+    <SolidColorBrush x:Key="OverlayPressedBrush" Color="#FFFFFF" Opacity="0.10" />
+    <SolidColorBrush x:Key="OverlaySelectedBrush" Color="#FFFFFF" Opacity="0.08" />
+
+    <!-- Elevation: box shadows (higher alpha than light for visibility on navy) -->
+    <BoxShadows x:Key="ShadowSm">0 1 2 0 #26000000</BoxShadows>
+    <BoxShadows x:Key="ShadowMd">0 4 6 -1 #33000000, 0 2 4 -2 #1F000000</BoxShadows>
+    <BoxShadows x:Key="ShadowLg">0 10 15 -3 #40000000, 0 4 6 -4 #26000000</BoxShadows>
 
     <!-- AvaloniaEdit SearchPanel override -->
     <SolidColorBrush x:Key="SearchPanelBackgroundBrush" Color="{StaticResource SurfacePanelBrushColor}" />

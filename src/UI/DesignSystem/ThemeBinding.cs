@@ -16,6 +16,19 @@ internal static class ThemeBinding
     /// </summary>
     internal static Application? TestApplication { get; set; }
 
+    /// <summary>
+    /// The active theme variant, resolved from the current application. Falls
+    /// back to <see cref="ThemeVariant.Light"/> off the UI thread.
+    /// </summary>
+    internal static ThemeVariant CurrentVariant
+    {
+        get
+        {
+            var app = ResolveApplication();
+            return GetThemeVariant(app);
+        }
+    }
+
     public static IBrush GetBrush(string resourceKey)
     {
         var app = ResolveApplication();
