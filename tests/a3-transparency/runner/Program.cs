@@ -19,6 +19,7 @@ using Zaide.Features.Agents.Presentation.Memory;
 using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Townhall.Presentation;
 using Zaide.Features.Workspace.Presentation;
 
@@ -130,6 +131,7 @@ internal static class Program
             var bindingStore = services.GetRequiredService<IAgentActorBackendBindingStore>();
             var conversationStore = services.GetRequiredService<IConversationStore>();
             var management = services.GetRequiredService<AgentTransparencyManagementViewModel>();
+            var settings = services.GetRequiredService<ISettingsService>();
 
             AssertTrue(townhall.TransparencyManagement == management, "di.townhall_transparency_owner");
 
@@ -173,17 +175,17 @@ internal static class Program
 
             AssertTrue(tracePanel.Focusable && memoryPanel.Focusable && usagePanel.Focusable, "a11y.panels_focusable");
             AssertTrue(
-                Avalonia.Automation.AutomationProperties.GetName(tracePanel.CaptureButton)
-                    == "Enable or disable trace capture",
-                "a11y.trace.capture_name");
+                Avalonia.Automation.AutomationProperties.GetName(tracePanel.OpenSettingsButton)
+                    == "Open application settings",
+                "a11y.trace.open_settings_name");
             AssertTrue(
                 Avalonia.Automation.AutomationProperties.GetName(memoryPanel.CreateButtonControl)
                     == "Create durable memory record",
                 "a11y.memory.create_name");
             AssertTrue(
-                Avalonia.Automation.AutomationProperties.GetName(usagePanel.CaptureButton)
-                    == "Enable or disable usage capture",
-                "a11y.usage.capture_name");
+                Avalonia.Automation.AutomationProperties.GetName(usagePanel.OpenSettingsButton)
+                    == "Open application settings",
+                "a11y.usage.open_settings_name");
 
             // ── A1-TC-02 Trace ──────────────────────────────────────
             AssertTrue(registry.Execute("agent.trace.open"), "tc02.command.open");
@@ -200,9 +202,13 @@ internal static class Program
                 || management.TraceInspection.Summary?.IsEmpty == true,
                 "tc02.empty_or_disabled_before_run");
 
-            // Explicit capture opt-in via shipped panel control.
-            tracePanel.CaptureButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(
-                Avalonia.Controls.Button.ClickEvent));
+            // Explicit capture opt-in via Settings (F5 moved capture config from
+            // inspect panels to Settings → Agents; AgentTransparencySettingsSync
+            // applies the durable default to the capture sinks).
+            settings.UpdateAsync(current => current with
+            {
+                Agents = current.Agents with { TraceCaptureEnabled = true },
+            }).GetAwaiter().GetResult();
             Dispatcher.UIThread.RunJobs();
             Thread.Sleep(100);
             Dispatcher.UIThread.RunJobs();
@@ -211,8 +217,10 @@ internal static class Program
                 "tc02.capture.opt_in",
                 management.TraceStatusCaption);
 
-            usagePanel.CaptureButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(
-                Avalonia.Controls.Button.ClickEvent));
+            settings.UpdateAsync(current => current with
+            {
+                Agents = current.Agents with { UsageCaptureEnabled = true },
+            }).GetAwaiter().GetResult();
             Dispatcher.UIThread.RunJobs();
 
             // Real admitted run via Townhall send (not inspection manufacture).
