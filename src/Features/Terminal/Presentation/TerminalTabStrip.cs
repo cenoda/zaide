@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
@@ -241,6 +242,8 @@ public class TerminalTabStrip : UserControl
             Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingXs, 0),
             Cursor = CursorHelper.TryCreateHand()
         };
+        ToolTip.SetTip(closeButton, "Close terminal tab");
+        AutomationProperties.SetName(closeButton, "Close terminal tab");
         closeButton.PointerPressed += (_, e) =>
         {
             if (e.GetCurrentPoint(closeButton).Properties.IsLeftButtonPressed)
@@ -299,7 +302,7 @@ public class TerminalTabStrip : UserControl
             "Icon.Plus",
             (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
             14);
-        return new Button
+        var button = new Button
         {
             Content = plus,
             Width = 24,
@@ -309,5 +312,8 @@ public class TerminalTabStrip : UserControl
             BorderThickness = LayoutTokens.NoneThickness,
             Cursor = CursorHelper.TryCreateHand()
         };
+        ToolTip.SetTip(button, "New terminal tab");
+        AutomationProperties.SetName(button, "New terminal tab");
+        return button;
     }
 }

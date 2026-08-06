@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -677,6 +678,8 @@ public partial class EditorTabBar : UserControl
             Padding = LayoutTokens.Uniform(LayoutTokens.SpacingXs),
             Child = closeGlyph
         };
+        ToolTip.SetTip(closeButton, "Close tab");
+        AutomationProperties.SetName(closeButton, "Close tab");
 
         // Deliberate 7% white hover overlay per M0.5 per-component assignments
         // (see IMPLEMENTATION_PLAN.md Nav Bar → Hover overlay). Not a palette token

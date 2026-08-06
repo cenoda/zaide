@@ -7,6 +7,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
@@ -76,6 +77,8 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             VerticalAlignment = VerticalAlignment.Center,
             IsVisible = false,
         };
+        ToolTip.SetTip(_closeFolderButton, "Close folder");
+        AutomationProperties.SetName(_closeFolderButton, "Close folder");
         _closeFolderButton.Click += (_, _) =>
         {
             ViewModel?.CloseFolderRequested.Handle(Unit.Default).Subscribe();

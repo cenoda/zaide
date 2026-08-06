@@ -12,15 +12,15 @@ public static class IconFactory
     public static Viewbox Create(string resourceKey, IBrush? foreground, double size = 16)
     {
         var geometry = ResolveIconGeometry(resourceKey);
+        // Phosphor Regular geometries in Icons.axaml are closed fill-oriented paths.
+        // Paint with Fill at header/toolbar sizes (~14–20px); stroke rendering turns
+        // these glyphs into mushy, unreadable outlines.
         var path = new Path
         {
             Data = geometry,
             Width = 256,
             Height = 256,
-            Stroke = foreground,
-            StrokeThickness = 16,
-            StrokeLineCap = PenLineCap.Round,
-            StrokeJoin = PenLineJoin.Round,
+            Fill = foreground,
             Stretch = Stretch.Uniform,
             IsHitTestVisible = false
         };
@@ -68,7 +68,7 @@ public static class IconFactory
     {
         if (icon is Viewbox { Child: Path path })
         {
-            path.Stroke = foreground;
+            path.Fill = foreground;
         }
     }
 }

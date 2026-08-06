@@ -4,6 +4,7 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
@@ -44,10 +45,6 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"];
 
         // --- Header ---
-        var branchIcon = IconFactory.Create(
-            "Icon.GitBranch",
-            (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
-            14);
         var title = TextStyles.Header("Source Control");
 
         var titleGroup = new StackPanel
@@ -55,7 +52,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs,
             VerticalAlignment = VerticalAlignment.Center,
-            Children = { branchIcon, title }
+            Children = { title }
         };
 
         var refreshButton = new Button
@@ -74,6 +71,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             VerticalAlignment = VerticalAlignment.Center,
             Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
         };
+        ToolTip.SetTip(refreshButton, "Refresh source control");
+        AutomationProperties.SetName(refreshButton, "Refresh source control");
 
         var header = new Grid
         {

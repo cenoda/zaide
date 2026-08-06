@@ -595,7 +595,11 @@ when a screenshot under the workspace is selected
 
 ### F10 — Icon symbols are unrecognizable (Source Control header captured)
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — `IconFactory` paints Phosphor Regular paths with
+  `Fill` (not stroke-only mush); `Icon.GitBranch` and `Icon.Search` path data
+  corrected; decorative Source Control header glyph removed; icon-only controls
+  get tooltip + `AutomationProperties.Name`. Covered by
+  `Phase23IconFactoryTests`.
 
 **Severity:** Medium (legibility / icon system quality)
 **Difficulty:** M
