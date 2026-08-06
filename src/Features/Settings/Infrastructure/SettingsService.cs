@@ -100,7 +100,7 @@ internal sealed class SettingsService : ISettingsService, IDisposable
 
     /// <summary>
     /// Production constructor. Resolves paths via <see cref="SettingsPathResolver"/>
-    /// and registers the ordered production migration chain (currently v1→v2→v3).
+    /// and registers the ordered production migration chain (currently v1→v2→v3→v4).
     /// </summary>
     public SettingsService()
         : this(SettingsPathResolver.GetSettingsPath(),
@@ -110,6 +110,7 @@ internal sealed class SettingsService : ISettingsService, IDisposable
                {
                    new SettingsMigrationV1ToV2(),
                    new SettingsMigrationV2ToV3(),
+                   new SettingsMigrationV3ToV4(),
                }))
     {
     }

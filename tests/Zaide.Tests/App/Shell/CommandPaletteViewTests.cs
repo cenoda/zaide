@@ -415,7 +415,7 @@ public sealed class CommandPaletteViewTests
                 new Dictionary<string, string>(keybindings));
             _current = new SettingsModel(SettingsModel.Defaults.SchemaVersion,
                 SettingsModel.Defaults.Editor, SettingsModel.Defaults.Llm, kb,
-                SettingsModel.Defaults.Debug);
+                SettingsModel.Defaults.Debug, SettingsModel.Defaults.Agents);
         }
 
         public SettingsModel Current => _current;
@@ -428,7 +428,7 @@ public sealed class CommandPaletteViewTests
                 new Dictionary<string, string>(keybindings));
             _current = new SettingsModel(SettingsModel.Defaults.SchemaVersion,
                 SettingsModel.Defaults.Editor, SettingsModel.Defaults.Llm, kb,
-                SettingsModel.Defaults.Debug);
+                SettingsModel.Defaults.Debug, SettingsModel.Defaults.Agents);
             _subject.OnNext(_current);
         }
 

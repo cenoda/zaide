@@ -17,10 +17,20 @@ public static class SettingsValidator
         var errors = new List<SettingsValidationError>();
 
         // ── Schema version ────────────────────────────────────────────────
-        // Floor remains 1; current production model is schema v3 (Debug breakpoints).
+        // Floor remains 1; current production model is schema v4 (Agents durable config).
         if (settings.SchemaVersion < 1)
             errors.Add(new(nameof(SettingsModel.SchemaVersion),
                 "Schema version must be at least 1."));
+
+        // ── Agents ────────────────────────────────────────────────────────
+        if (settings.Agents is not null)
+        {
+            AgentsSettingsValidation.Validate(settings.Agents, errors);
+        }
+        else
+        {
+            errors.Add(new(nameof(SettingsModel.Agents), "Agents settings must not be null."));
+        }
 
         // ── Editor ────────────────────────────────────────────────────────
         if (string.IsNullOrWhiteSpace(settings.Editor.CodeFontFamily))

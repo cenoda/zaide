@@ -12,7 +12,7 @@ namespace Zaide.Features.Settings.Domain;
 /// All nested types are also immutable records. Consumers create new instances
 /// via <c>with</c> expressions and cannot mutate a published snapshot.
 /// </summary>
-/// <param name="SchemaVersion">Version of the settings schema (currently <c>3</c>).</param>
+/// <param name="SchemaVersion">Version of the settings schema (currently <c>4</c>).</param>
 /// <param name="Editor">Editor/terminal display preferences.</param>
 /// <param name="Llm">LLM endpoint configuration.</param>
 /// <param name="Keybindings">
@@ -21,12 +21,14 @@ namespace Zaide.Features.Settings.Domain;
 /// missing override. The dictionary is always exposed as a read-only wrapper.
 /// </param>
 /// <param name="Debug">Debug-related persisted preferences such as breakpoints.</param>
+/// <param name="Agents">Agent platform and transparency durable preferences.</param>
 public sealed record SettingsModel(
     int SchemaVersion,
     EditorSettings Editor,
     LlmSettings Llm,
     IReadOnlyDictionary<string, string> Keybindings,
-    DebugSettings Debug
+    DebugSettings Debug,
+    AgentsSettings Agents
 )
 {
     /// <summary>An immutable, empty keybindings dictionary.</summary>
@@ -34,15 +36,16 @@ public sealed record SettingsModel(
         new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
 
     /// <summary>
-    /// Default settings snapshot, corresponding to schema v3.
+    /// Default settings snapshot, corresponding to schema v4.
     /// Used when no settings file exists or when fallback is required.
     /// </summary>
     public static readonly SettingsModel Defaults = new(
-        SchemaVersion: 3,
+        SchemaVersion: 4,
         Editor: EditorSettings.Default,
         Llm: LlmSettings.Default,
         Keybindings: EmptyKeybindings,
-        Debug: DebugSettings.Default
+        Debug: DebugSettings.Default,
+        Agents: AgentsSettings.Default
     );
 
     /// <summary>
@@ -211,6 +214,53 @@ public sealed record DebugSettings(
 
     /// <summary>Default debug settings for schema v3.</summary>
     public static readonly DebugSettings Default = new(EmptyBreakpointsByWorkspaceRoot);
+}
+
+/// <summary>
+/// Durable agent platform and transparency preferences (Phase 23 F5).
+/// Secrets (API keys, bearer tokens) belong in <c>ISecretStore</c>, not here.
+/// </summary>
+public sealed record AgentsSettings(
+    [property: JsonPropertyName("traceCaptureEnabled")]
+    bool TraceCaptureEnabled,
+
+    [property: JsonPropertyName("usageCaptureEnabled")]
+    bool UsageCaptureEnabled,
+
+    [property: JsonPropertyName("tracePageSize")]
+    int TracePageSize,
+
+    [property: JsonPropertyName("traceMaxPageSize")]
+    int TraceMaxPageSize,
+
+    [property: JsonPropertyName("acpExecutablePath")]
+    string AcpExecutablePath,
+
+    [property: JsonPropertyName("acpArguments")]
+    string AcpArguments,
+
+    [property: JsonPropertyName("acpExpectedAgentName")]
+    string AcpExpectedAgentName,
+
+    [property: JsonPropertyName("acpExpectedAgentVersion")]
+    string AcpExpectedAgentVersion,
+
+    [property: JsonPropertyName("defaultContextPolicyLevel")]
+    string DefaultContextPolicyLevel
+)
+{
+    /// <summary>Default agent settings for schema v4.</summary>
+    public static readonly AgentsSettings Default = new(
+        TraceCaptureEnabled: false,
+        UsageCaptureEnabled: false,
+        TracePageSize: 64,
+        TraceMaxPageSize: 256,
+        AcpExecutablePath: string.Empty,
+        AcpArguments: string.Empty,
+        AcpExpectedAgentName: string.Empty,
+        AcpExpectedAgentVersion: string.Empty,
+        DefaultContextPolicyLevel: "Standard"
+    );
 }
 
 /// <summary>

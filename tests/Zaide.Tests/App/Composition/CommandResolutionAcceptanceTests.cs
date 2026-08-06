@@ -512,7 +512,8 @@ public sealed class CommandResolutionAcceptanceTests
             SettingsModel.Defaults.Editor,
             SettingsModel.Defaults.Llm,
             keybindings,
-            SettingsModel.Defaults.Debug);
+            SettingsModel.Defaults.Debug,
+            SettingsModel.Defaults.Agents);
 
         return new SimpleSettingsCapture(model);
     }

@@ -401,7 +401,8 @@ public sealed class FormatOnSaveTests : IDisposable
                 "MyFont", 16, "Prose", "Term", 12, 2, false, true, true, false),
             Llm: new LlmSettings("https://custom", "custom-model", "secret-store"),
             Keybindings: new Dictionary<string, string> { ["palette.open"] = "Ctrl+P" },
-            Debug: DebugSettings.Default);
+            Debug: DebugSettings.Default,
+            Agents: AgentsSettings.Default);
 
         var migration = new SettingsMigrationV1ToV2();
         Assert.Equal(1, migration.FromVersion);
@@ -433,7 +434,25 @@ public sealed class FormatOnSaveTests : IDisposable
     }
 
     [Fact]
-    public void Migration_ViaSettingsService_LoadsV1FileAsV3()
+    public void Migration_V3ToV4_AddsAgentDefaults_PreservesOtherFields()
+    {
+        var v3 = SettingsModel.Defaults with { SchemaVersion = 3 };
+        var migration = new SettingsMigrationV3ToV4();
+        Assert.Equal(3, migration.FromVersion);
+        Assert.Equal(4, migration.ToVersion);
+
+        var v4 = migration.Migrate(v3);
+        Assert.Equal(4, v4.SchemaVersion);
+        Assert.False(v4.Agents.TraceCaptureEnabled);
+        Assert.False(v4.Agents.UsageCaptureEnabled);
+        Assert.Equal(64, v4.Agents.TracePageSize);
+        Assert.Equal(256, v4.Agents.TraceMaxPageSize);
+        Assert.Equal("Standard", v4.Agents.DefaultContextPolicyLevel);
+        Assert.Equal(SettingsModel.Defaults.Llm.Model, v4.Llm.Model);
+    }
+
+    [Fact]
+    public void Migration_ViaSettingsService_LoadsV1FileAsV4()
     {
         var dir = Path.Combine(TempRoot, "mig-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
@@ -470,10 +489,11 @@ public sealed class FormatOnSaveTests : IDisposable
         {
             new SettingsMigrationV1ToV2(),
             new SettingsMigrationV2ToV3(),
+            new SettingsMigrationV3ToV4(),
         });
         using var service = new SettingsService(settingsPath, lkgPath, tempPath, migrator);
 
-        Assert.Equal(3, service.Current.SchemaVersion);
+        Assert.Equal(4, service.Current.SchemaVersion);
         Assert.False(service.Current.Editor.FormatOnSave);
         Assert.Equal(20, service.Current.Editor.CodeFontSize);
         Assert.Empty(service.Current.Debug.BreakpointsByWorkspaceRoot);

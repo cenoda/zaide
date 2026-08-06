@@ -322,7 +322,8 @@ public sealed class SettingsDrivenKeyBindingRefreshTests
             SettingsModel.Defaults.Editor,
             SettingsModel.Defaults.Llm,
             keybindings,
-            SettingsModel.Defaults.Debug);
+            SettingsModel.Defaults.Debug,
+            SettingsModel.Defaults.Agents);
     }
 
     /// <summary>
