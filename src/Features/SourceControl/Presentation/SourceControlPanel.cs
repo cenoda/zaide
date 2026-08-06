@@ -199,8 +199,10 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _commitInput = new TextBox
         {
             PlaceholderText = "Commit message...",
-            AcceptsReturn = false,
-            Height = 32,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 32,
+            MaxHeight = 120,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
             Background = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)),
             Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],

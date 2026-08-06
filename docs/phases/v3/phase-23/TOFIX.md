@@ -22,7 +22,7 @@ intentional.
 
 **New finding (2026-08-06):** F16 catalogued from user report (Source Control commit message input box height fixed single-line with `AcceptsReturn = false`).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15 fixed; F16 catalogued/pending). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -865,7 +865,13 @@ alignment is more normal.
 
 ### F16 — Commit message input box height is fixed to single-line 32px
 
-- [ ] Not fixed — Catalogued (2026-08-06)
+- [x] Fixed (2026-08-06) — `_commitInput` is now multi-line: `AcceptsReturn = true`,
+      `TextWrapping = TextWrapping.Wrap`, fixed `Height = 32` replaced with
+      `MinHeight = 32` / `MaxHeight = 120` so it grows with wrapped text and
+      expands up to a comfortable cap. Enter inserts line breaks inside the box;
+      commit still fires from the primary action button. Covered by existing
+      `SourceControlViewModelTests` + `SourceControlMutationFlowTests` (no
+      regression).
 
 **Severity:** Cosmetic (UX readability/usability)  
 **Difficulty:** XS  
