@@ -18,7 +18,9 @@ intentional.
 **High-priority bug (2026-08-05):** **F14 → [ISSUE-009](../../../issues/closed/ISSUE-009-production-di-test-contaminates-conversation-store.md)**
 (production DI test wrote a test marker into user conversation drafts).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
+**New finding (2026-08-06):** F15 catalogued from screenshot/report (multiple clicks on "Open Folder" spawn concurrent picker dialogs).
+
+**XS/S wave complete (F13, F11, F2, F4, F14, F6; F15 pending). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -55,6 +57,7 @@ Townhall panel chrome.
 | `temp-screenshots/status-bar-dead-segment-buttons.png` | Status bar: `Zaide` (settings) + document / Ln,Col / language / C# Ready / project / branch look like buttons; only settings works |
 | `temp-screenshots/source-control-selection-and-no-unstage-all.png` | SC: Changes(0) / Staged(10); multiple staged rows look selected at once; per-row `−` only; no Unstage All; Stage All absent when unstaged empty |
 | `temp-screenshots/settings-right-aligned.png` | Settings overlay: 520px form column pinned to the right; large empty region on the left |
+| `temp-screenshots/open-folder-multi-click-picker.png` | File tree header / Ctrl+O: multiple clicks on "Open Folder" spawn concurrent picker dialogs |
 | (workspace status bar in several captures) | Selecting a `.png` in the explorer shows `Unsupported file type: png` — images not openable in editor |
 
 ## Difficulty index (2026-08-05)
@@ -85,11 +88,12 @@ Scale (effort for a careful implementer who already knows the repo):
 | **F7** | Bottom panel purpose unclear | Med–High | **L** | High (product IA; empty producers) | After F6; links DF-007 |
 | **F8** | PNG / images not openable | Low–Med | **M–L** | High (unsupported type) — **policy choice A/B** | Optional / later |
 | **F5** | Move most config to Settings | High | **XL** | High direction; implementation wide | Last / own milestone |
+| **F15** | Multiple clicks on "Open Folder" spawn concurrent picker dialogs | Low–Med | **XS–S** | High (`PointerPressed` / picker re-entrancy guard missing) | Solo explorer / shell |
 
 **Difficulty-first fix order (not severity-only):**
 
 1. **Data-safety first:** **F14 / ISSUE-009** (user store contamination)
-2. **XS/S wave:** F13 → F11 → F2 → F4 → F6
+2. **XS/S wave:** F13 → F11 → F2 → F4 → F6 → F15
 3. **M wave:** F1 → F12 → F9 → F10 → F3 (with F2 if not done)
 4. **L/XL wave:** F7 → F8 (if authorized) → **F5** (own plan; schema)
 
@@ -833,6 +837,29 @@ alignment is more normal.
 
 ---
 
+### F15 — Multiple clicks on "Open Folder" spawn concurrent folder picker dialogs
+
+- [ ] Not fixed
+
+**Severity:** Low–Medium (UX glitch / multiple system dialogs)  
+**Difficulty:** XS–S  
+**Area:** File tree header (`FileTreeView.cs`) + shell open folder command (`MainWindowViewModel.cs`)  
+**Source:** Live screenshot / user report (`temp-screenshots/open-folder-multi-click-picker.png`)
+
+**Observed behavior:**  
+- Rapidly clicking "Open Folder..." (or double-clicking the header text/command) spawns multiple native folder picker dialogs concurrently.  
+- `FileTreeView` `_headerText.PointerPressed` handler and `MainWindowViewModel.OpenFolderCommand` lack re-entrancy protection or input disabling while `OpenFolderPickerAsync` is awaiting user action.  
+
+**Expected behavior:**  
+- "Open Folder..." trigger should be re-entrancy guarded (subsequent clicks ignored while a picker dialog is open).  
+- Only a single folder picker dialog should be active at any given time.  
+
+**Notes for implementers:**  
+- `FileTreeView.cs` attaches a raw `PointerPressed` handler to `_headerText` which calls `topLevel.StorageProvider.OpenFolderPickerAsync(...)` without checking a busy/picking flag.  
+- Ensure both `FileTreeView` header click and `MainWindowViewModel.OpenFolderCommand` (Ctrl+O) use an `isPicking` flag or `ReactiveCommand` execution lock to prevent parallel folder pickers.  
+
+---
+
 ## Blockers
 
 - None recorded. Indexing pass does not authorize implementation.
@@ -859,8 +886,9 @@ chat Star band preserved; open-flag exclusivity unchanged. F3 not bundled.
 
 Remaining difficulty-first waves:
 
-1. **M:** F12 → F9 → F10 → F3
-2. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
+1. **XS/S (new finding):** F15
+2. **M:** F12 → F9 → F10 → F3
+3. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
 
 One reviewable commit per coherent outcome. Do not batch F5 with polish.
 
