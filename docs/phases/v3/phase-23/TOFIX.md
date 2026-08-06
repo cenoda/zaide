@@ -315,7 +315,7 @@ capture off” surface.
       defaults with Open Settings deep-link (same `ShowSettings` path as status bar).
       Plan: [F5_SETTINGS_HOME_PLAN.md](./F5_SETTINGS_HOME_PLAN.md). Commits
       `84dd8666` (schema), `2a9ce53f` (Settings UI + sync), `f2ab335b` (Townhall chrome),
-      `2a254786` (tests + docs). Covered by `Phase23SettingsAgentsTests`,
+      `d8de44d3` (tests + docs). Covered by `Phase23SettingsAgentsTests`,
       `Phase23F5TownhallConfigTests`, updated Phase 22/23 transparency tests.
 
 **Severity:** High (product direction; unblocks F3 chrome reduction)
