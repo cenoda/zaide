@@ -71,7 +71,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
             Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
             Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
             CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand),
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, 0, 0)
@@ -158,7 +158,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
         _logListBox = new ListBox
         {
             Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
             IsVisible = false
         };
 
@@ -341,7 +341,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm + LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs, LayoutTokens.SpacingSm + LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs),
             Background = (IBrush?)resources["SurfacePanelBrush"],
             Foreground = (IBrush?)resources["TextPrimaryBrush"],
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
             CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
@@ -357,7 +357,7 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
             Background = (IBrush?)resources["SurfacePanelBrush"],
             Foreground = (IBrush?)resources["TextPrimaryBrush"],
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
             CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand)
         };

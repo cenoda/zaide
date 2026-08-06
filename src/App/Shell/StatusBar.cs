@@ -33,15 +33,24 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private readonly Button _settingsButton;
     private readonly Control _settingsIcon;
     private readonly TextBlock _settingsAppNameText;
-    private readonly SolidColorBrush _settingsActiveBackground = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
-    private readonly SolidColorBrush _settingsHoverBackground = new(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
-    private readonly SolidColorBrush _settingsPressedBackground = new(Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF));
+    private IBrush? _settingsActiveBackground;
+    private IBrush SettingsActiveBackground => _settingsActiveBackground ??= ThemeBinding.GetBrush("OverlaySelectedBrush");
+    private IBrush? _settingsHoverBackground;
+    private IBrush SettingsHoverBackground => _settingsHoverBackground ??= ThemeBinding.GetBrush("OverlayHoverBrush");
+    private IBrush? _settingsPressedBackground;
+    private IBrush SettingsPressedBackground => _settingsPressedBackground ??= ThemeBinding.GetBrush("OverlayPressedBrush");
     private bool _isSettingsButtonActive;
 
     public StatusBar()
     {
         Height = 24;
         Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
+        ActualThemeVariantChanged += (_, _) =>
+        {
+            _settingsActiveBackground = null;
+            _settingsHoverBackground = null;
+            _settingsPressedBackground = null;
+        };
 
         _settingsIcon = IconFactory.Create(
             "Icon.Config",
@@ -170,7 +179,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private void UpdateSettingsButtonBackground()
     {
         _settingsButton.Background = _isSettingsButtonActive
-            ? _settingsActiveBackground
+            ? SettingsActiveBackground
             : Brushes.Transparent;
     }
 
@@ -180,14 +189,14 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         {
             if (!button.IsPressed)
             {
-                button.Background = _settingsHoverBackground;
+                button.Background = SettingsHoverBackground;
             }
         };
         button.PointerExited += (_, _) => UpdateSettingsButtonBackground();
-        button.PointerPressed += (_, _) => button.Background = _settingsPressedBackground;
+        button.PointerPressed += (_, _) => button.Background = SettingsPressedBackground;
         button.PointerReleased += (_, _) =>
             button.Background = button.IsPointerOver || _isSettingsButtonActive
-                ? _settingsHoverBackground
+                ? SettingsHoverBackground
                 : Brushes.Transparent;
     }
 

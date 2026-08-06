@@ -94,7 +94,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd),
             PlaceholderText = "Select branch",
-            Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
+            Background = ThemeBinding.GetBrush("OverlayHoverBrush"),
             Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
             FontSize = 13
         };
@@ -203,9 +203,9 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             MinHeight = 32,
             MaxHeight = 120,
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
-            Background = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)),
+            Background = ThemeBinding.GetBrush("SurfaceRaised1Brush"),
             Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
             FontSize = 13
         };
 
@@ -399,7 +399,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     var notice = tuple.Item3;
                     if (!string.IsNullOrEmpty(err))
                     {
-                        _commitErrorText.Foreground = new SolidColorBrush(Color.Parse("#E05555"));
+                        _commitErrorText.Foreground = ThemeBinding.GetBrush("DangerBrush");
                         _commitErrorText.Text = err;
                         _commitErrorText.IsVisible = true;
                     }
@@ -453,7 +453,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
     private Style CreateChangeListItemStyle()
     {
         var style = new Style(s => s.OfType<ListBoxItem>());
-        style.Setters.Add(new Setter(ListBoxItem.PaddingProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(ListBoxItem.PaddingProperty, LayoutTokens.NoneThickness));
         style.Setters.Add(new Setter(ListBoxItem.MinHeightProperty, 24.0));
         return style;
     }
@@ -465,17 +465,17 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             if (change is null) return null;
 
             // Status icon
-            var (statusChar, statusColor) = change.ChangeType switch
+            var (statusChar, statusBrush) = change.ChangeType switch
             {
-                GitChangeType.Added => ("A", "#28A745"),
-                GitChangeType.Modified => ("M", "#FCBB47"),
-                GitChangeType.Deleted => ("D", "#E05555"),
-                _ => ("?", "#8B95A5")
+                GitChangeType.Added => ("A", ThemeBinding.GetBrush("SuccessBrush")),
+                GitChangeType.Modified => ("M", ThemeBinding.GetBrush("WarningBrush")),
+                GitChangeType.Deleted => ("D", ThemeBinding.GetBrush("DangerBrush")),
+                _ => ("?", ThemeBinding.GetBrush("TextSecondaryBrush"))
             };
 
             var statusText = TextStyles.Caption(statusChar);
             statusText.FontWeight = FontWeight.Bold;
-            statusText.Foreground = new SolidColorBrush(Color.Parse(statusColor));
+            statusText.Foreground = statusBrush;
             statusText.HorizontalAlignment = HorizontalAlignment.Center;
             statusText.VerticalAlignment = VerticalAlignment.Center;
 
@@ -507,7 +507,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 Padding = LayoutTokens.NoneThickness,
                 Background = Brushes.Transparent,
                 Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
-                BorderThickness = new Thickness(0),
+                BorderThickness = LayoutTokens.NoneThickness,
                 Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,

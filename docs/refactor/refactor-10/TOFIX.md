@@ -2,8 +2,8 @@
 
 ## Status
 
-M0 (plan and archive) and M1 (theme variant infrastructure) are complete. M2 is
-the next task.
+M0 (plan and archive) through M3 (literal replacement and guard) are complete.
+M4 is the next task.
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -61,7 +61,7 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | M0 — plan and archive | done | docs review |
 | M1 — theme variant infrastructure | done | key-parity test + forced runtime variant flip |
 | M2 — semantic tokens and both ramps | done | contrast-ratio tests + full suite |
-| M3 — literal replacement and guard | next | `scripts/check-theme-tokens.sh` |
+| M3 — literal replacement and guard | done | `scripts/check-theme-tokens.sh` |
 | M4 — shared control layer | pending | full suite + interaction walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
@@ -86,8 +86,24 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 - Contrast ratios verified: body text ≥ 4.5:1, secondary/borders ≥ 3:1, in both ramps.
 - All 4062 tests pass.
 
+## M3 result (2026-08-06)
+
+- Replaced hardcoded color literals (`Color.Parse("#...")`, `Color.FromArgb`,
+  `Color.FromRgb`, bare hex strings) in 16 production files with
+  `ThemeBinding.GetBrush`/`GetColor` semantic token references.
+- Converted remaining static brush/color caches to instance caches invalidated
+  on `ActualThemeVariantChanged` (StatusBar, TownhallPeoplePanel,
+  TownhallNavigationPanel).
+- Routed raw `new Thickness(` spacing values through `LayoutTokens.SpacingXxx`
+  and `LayoutTokens.NoneThickness`; 1px border widths left as literals (not
+  spacing).
+- Added `scripts/check-theme-tokens.sh` guard (Color.Parse hex form) and wired
+  a `check-theme-tokens` target into the `Makefile`.
+- `AgentMemoryPanel`, `AgentBackendBindingPanel`, and `BottomPanelHost` were
+  already token-based (M0 audit counts predated M1/M2).
+- All 4062 tests pass; `dotnet build` clean.
+
 ## Next task
 
-M3: replace hardcoded color literals and raw `new Thickness(` calls in
-`src/**/*.cs` with token references, and add `scripts/check-theme-tokens.sh`
-guard wired into the `Makefile` and CI path.
+M4: shared control layer — centralize hover/pressed/focus state styles and
+focus rings into a shared `ControlTheme` / `Styles` layer.

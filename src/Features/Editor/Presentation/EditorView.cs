@@ -128,7 +128,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
         _indentGuideRenderer = new IndentGuideRenderer(
             _textEditor.TextArea.TextView,
-            new SolidColorBrush(Color.FromArgb(90, 194, 194, 229)));
+            ThemeBinding.GetBrush("AccentSubtleBgBrush"));
 
         _breakpointOperations = new BreakpointOperations(
             _textEditor,

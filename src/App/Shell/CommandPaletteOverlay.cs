@@ -66,8 +66,8 @@ public sealed class CommandPaletteOverlay : UserControl
 
         _popupBorder = new Border
         {
-            Background = ResolveBrush("SurfacePanelBrush", Color.Parse("#1E1E2E")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A4A")),
+            Background = ThemeBinding.GetBrush("SurfacePanelBrush"),
+            BorderBrush = ThemeBinding.GetBrush("BorderDefaultBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusMd,
             Padding = LayoutTokens.Uniform(LayoutTokens.SpacingSm),
@@ -78,7 +78,7 @@ public sealed class CommandPaletteOverlay : UserControl
 
         var backdrop = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
+            Background = ThemeBinding.GetBrush("SurfaceOverlayBrush"),
             Child = new Grid
             {
                 VerticalAlignment = VerticalAlignment.Top,
@@ -172,7 +172,7 @@ public sealed class CommandPaletteOverlay : UserControl
 
             var nameText = TextStyles.Body(entry.DisplayName);
             if (!isAvailable)
-                nameText.Foreground = new SolidColorBrush(Color.Parse("#555566"));
+                nameText.Foreground = ThemeBinding.GetBrush("TextDisabledBrush");
 
             var categoryText = TextStyles.Caption(entry.Category);
             categoryText.VerticalAlignment = VerticalAlignment.Center;
@@ -196,7 +196,7 @@ public sealed class CommandPaletteOverlay : UserControl
                 Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
                 CornerRadius = LayoutTokens.RadiusSm,
                 Background = isSelected
-                    ? new SolidColorBrush(Color.FromArgb(60, 194, 194, 229))
+                    ? ThemeBinding.GetBrush("OverlaySelectedBrush")
                     : Brushes.Transparent,
                 Tag = i,
             };
@@ -211,7 +211,7 @@ public sealed class CommandPaletteOverlay : UserControl
     private void UpdateSelectionVisual()
     {
         var selectedIndex = _viewModel.SelectedIndex;
-        var selectedBrush = new SolidColorBrush(Color.FromArgb(60, 194, 194, 229));
+        var selectedBrush = ThemeBinding.GetBrush("OverlaySelectedBrush");
 
         for (var i = 0; i < _itemBorders.Count; i++)
         {
@@ -240,21 +240,5 @@ public sealed class CommandPaletteOverlay : UserControl
 
         if (_viewModel.ExecuteSelected())
             Dismissed?.Invoke();
-    }
-
-    private static IBrush ResolveBrush(string resourceKey, Color fallback)
-    {
-        try
-        {
-            if (Application.Current?.Resources.TryGetValue(resourceKey, out var value) == true &&
-                value is IBrush brush)
-                return brush;
-        }
-        catch (InvalidOperationException)
-        {
-            // Unit tests may share an Application on another dispatcher thread.
-        }
-
-        return new SolidColorBrush(fallback);
     }
 }

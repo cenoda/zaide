@@ -44,13 +44,7 @@ internal sealed class TownhallNavigationPanel : Panel
     {
         get
         {
-            if (_hoverOverlay is null)
-            {
-                _hoverOverlay = ActualThemeVariant == ThemeVariant.Dark
-                    ? Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF)
-                    : Color.FromArgb(0x0A, 0x00, 0x00, 0x00);
-            }
-
+            _hoverOverlay ??= ThemeBinding.GetColor("OverlayHoverBrush");
             return _hoverOverlay.Value;
         }
     }

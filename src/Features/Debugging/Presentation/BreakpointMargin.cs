@@ -32,7 +32,7 @@ internal sealed class BreakpointMargin : AbstractMargin
     private IBrush PendingFill => _pendingFill ??= CreateFill(230, 170, 40);
     private IBrush RejectedFill => _rejectedFill ??= CreateFill(120, 120, 140);
     private IBrush RejectedStroke => _rejectedStroke ??= CreateFill(220, 80, 80);
-    private IBrush DisabledFill => _disabledFill ??= new SolidColorBrush(Color.FromArgb(120, 180, 180, 200));
+    private IBrush DisabledFill => _disabledFill ??= ThemeBinding.GetBrush("TextDisabledBrush");
     private IBrush DisabledStroke => _disabledStroke ??= CreateFill(180, 180, 200);
 
     private readonly Action<int>? _toggleLine;

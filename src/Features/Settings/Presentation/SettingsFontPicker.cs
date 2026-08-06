@@ -44,16 +44,16 @@ public sealed class SettingsFontPicker : UserControl
         {
             FontSize = 14,
             VerticalAlignment = VerticalAlignment.Center,
-            Foreground = ResolveBrush("TextPrimaryBrush", "#E3E4F4"),
+            Foreground = ThemeBinding.GetBrush("TextPrimaryBrush"),
         };
 
         _trigger = new Border
         {
-            BorderBrush = ResolveBrush("SeparatorBrush", "#070C16"),
+            BorderBrush = ThemeBinding.GetBrush("SeparatorBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXs),
-            Background = ResolveBrush("SurfaceBaseBrush", "#1A2332"),
+            Background = ThemeBinding.GetBrush("SurfaceBaseBrush"),
             Child = _selectedLabel,
             Focusable = true,
         };
@@ -81,8 +81,8 @@ public sealed class SettingsFontPicker : UserControl
 
         var listHost = new Border
         {
-            Background = ResolveBrush("SurfaceBaseBrush", "#1A2332"),
-            BorderBrush = ResolveBrush("SeparatorBrush", "#070C16"),
+            Background = ThemeBinding.GetBrush("SurfaceBaseBrush"),
+            BorderBrush = ThemeBinding.GetBrush("SeparatorBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             ClipToBounds = true,
@@ -280,7 +280,7 @@ public sealed class SettingsFontPicker : UserControl
         {
             _selectedLabel.Text = "Select font…";
             _selectedLabel.FontFamily = InstalledFontCatalog.ResolvePreviewFontFamily(string.Empty, false);
-            _selectedLabel.Foreground = ResolveBrush("TextSecondaryBrush", "#8B95A5");
+            _selectedLabel.Foreground = ThemeBinding.GetBrush("TextSecondaryBrush");
             return;
         }
 
@@ -289,8 +289,8 @@ public sealed class SettingsFontPicker : UserControl
             entry.Name,
             entry.IsAvailable);
         _selectedLabel.Foreground = entry.IsAvailable
-            ? ResolveBrush("TextPrimaryBrush", "#E3E4F4")
-            : ResolveBrush("TextSecondaryBrush", "#8B95A5");
+            ? ThemeBinding.GetBrush("TextPrimaryBrush")
+            : ThemeBinding.GetBrush("TextSecondaryBrush");
     }
 
     private bool IsFocusInsidePicker()
@@ -337,14 +337,14 @@ public sealed class SettingsFontPicker : UserControl
                 FontSize = 14,
                 VerticalAlignment = VerticalAlignment.Center,
                 Foreground = entry.IsAvailable
-                    ? ResolveBrush("TextPrimaryBrush", "#E3E4F4")
-                    : ResolveBrush("TextSecondaryBrush", "#8B95A5"),
+                    ? ThemeBinding.GetBrush("TextPrimaryBrush")
+                    : ThemeBinding.GetBrush("TextSecondaryBrush"),
             };
 
             return new Border
             {
                 Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXs),
-                BorderBrush = ResolveBrush("SeparatorBrush", "#070C16"),
+                BorderBrush = ThemeBinding.GetBrush("SeparatorBrush"),
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Child = label,
             };
@@ -365,24 +365,13 @@ public sealed class SettingsFontPicker : UserControl
         var style = new Style(s => s.OfType<ListBoxItem>().Class(":selected"));
         style.Setters.Add(new Setter(
             ListBoxItem.BackgroundProperty,
-            ResolveBrush("SurfaceRaisedBrush", "#243352")));
+            ThemeBinding.GetBrush("SurfaceRaisedBrush")));
         style.Setters.Add(new Setter(
             ListBoxItem.BorderBrushProperty,
-            ResolveBrush("PrimaryAccentBrush", "#066ADB")));
+            ThemeBinding.GetBrush("PrimaryAccentBrush")));
         style.Setters.Add(new Setter(
             ListBoxItem.BorderThicknessProperty,
             new Thickness(2, 0, 0, 0)));
         return style;
-    }
-
-    private static IBrush ResolveBrush(string resourceKey, string fallbackColor)
-    {
-        if (Application.Current?.Resources.TryGetValue(resourceKey, out var value) == true
-            && value is IBrush brush)
-        {
-            return brush;
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackColor));
     }
 }

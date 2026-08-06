@@ -88,7 +88,7 @@ public class NavBar : Panel, IDisposable
         // Hover overlay: 7% white, fills the icon button area
         _explorerHoverOverlay = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
+            Background = ThemeBinding.GetBrush("OverlayHoverBrush"),
             CornerRadius = LayoutTokens.RadiusMd,
             IsVisible = false,
             IsHitTestVisible = false,
@@ -98,7 +98,7 @@ public class NavBar : Panel, IDisposable
 
         _sourceControlHoverOverlay = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)),
+            Background = ThemeBinding.GetBrush("OverlayHoverBrush"),
             CornerRadius = LayoutTokens.RadiusMd,
             IsVisible = false,
             IsHitTestVisible = false,

@@ -71,9 +71,9 @@ public class TownhallInputArea : Panel
         _inputField = new TextBox
         {
             PlaceholderText = "Message...",
-            Background = new SolidColorBrush(Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)),
+            Background = ThemeBinding.GetBrush("SurfaceRaised1Brush"),
             Foreground = PaletteTokens.TextPrimaryBrush,
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
             MinHeight = 32,
             MaxLines = 5,
             // AcceptsReturn is intentionally false: when true, the TextBox class

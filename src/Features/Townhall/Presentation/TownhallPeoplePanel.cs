@@ -21,7 +21,8 @@ namespace Zaide.Features.Townhall.Presentation;
 public class TownhallPeoplePanel : Panel
 {
     // M6: Hover overlay brush (faint white) shared with ChannelPanel.
-    private static readonly Color HoverOverlay = Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF);
+    private IBrush? _hoverOverlayCache;
+    private IBrush HoverOverlay => _hoverOverlayCache ??= ThemeBinding.GetBrush("OverlayHoverBrush");
 
     private readonly StackPanel _agentList;
     private Action<ActorId>? _onOpenDirectMessage;
@@ -67,6 +68,8 @@ public class TownhallPeoplePanel : Panel
 
         // Dock: header at top, scrollable list fills rest
         DockPanel.SetDock(header, Dock.Top);
+
+        ActualThemeVariantChanged += (_, _) => _hoverOverlayCache = null;
     }
 
     /// <summary>
@@ -181,7 +184,7 @@ public class TownhallPeoplePanel : Panel
         // Hover effect
         row.PointerEntered += (_, _) =>
         {
-            row.Background = new SolidColorBrush(HoverOverlay);
+            row.Background = HoverOverlay;
             row.CornerRadius = LayoutTokens.RadiusSm;
         };
         row.PointerExited += (_, _) =>

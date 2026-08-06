@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.App.Shell;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Features.Editor.Presentation;
 
@@ -42,7 +43,7 @@ public sealed class SearchBar : UserControl
         {
             Content = "▲",
             Width = 28,
-            Padding = new Thickness(0)
+            Padding = LayoutTokens.NoneThickness
         };
         DockPanel.SetDock(prevBtn, Dock.Left);
         ToolTip.SetTip(prevBtn, "Find Previous (Shift+F3)");
@@ -52,7 +53,7 @@ public sealed class SearchBar : UserControl
         {
             Content = "▼",
             Width = 28,
-            Padding = new Thickness(0)
+            Padding = LayoutTokens.NoneThickness
         };
         DockPanel.SetDock(nextBtn, Dock.Left);
         ToolTip.SetTip(nextBtn, "Find Next (F3)");
@@ -79,7 +80,7 @@ public sealed class SearchBar : UserControl
         {
             Content = "Aa",
             Width = 28,
-            Padding = new Thickness(0)
+            Padding = LayoutTokens.NoneThickness
         };
         DockPanel.SetDock(_caseToggle, Dock.Right);
         ToolTip.SetTip(_caseToggle, "Toggle Case Sensitivity");
@@ -93,7 +94,7 @@ public sealed class SearchBar : UserControl
         {
             Content = "✕",
             Width = 28,
-            Padding = new Thickness(0)
+            Padding = LayoutTokens.NoneThickness
         };
         DockPanel.SetDock(closeBtn, Dock.Right);
         ToolTip.SetTip(closeBtn, "Close (Esc)");
@@ -101,7 +102,7 @@ public sealed class SearchBar : UserControl
 
         var queryRow = new DockPanel
         {
-            Margin = new Thickness(4, 2, 4, 2),
+            Margin = new Thickness(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
             Children = { closeBtn, _caseToggle, _queryBox, prevBtn, nextBtn, _matchInfo }
         };
 
@@ -136,7 +137,7 @@ public sealed class SearchBar : UserControl
         {
             Orientation = Orientation.Horizontal,
             Spacing = 4,
-            Margin = new Thickness(4, 0, 4, 2),
+            Margin = new Thickness(LayoutTokens.SpacingXs, 0, LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
             Children = { _replaceBox, replaceOneBtn, replaceAllBtn }
         };
         _replacePanel.Bind(IsVisibleProperty, new Binding("IsReplaceMode"));
@@ -259,7 +260,7 @@ public sealed class SearchBar : UserControl
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is true)
-                return new SolidColorBrush(Color.FromArgb(60, 100, 149, 237));
+                return ThemeBinding.GetBrush("AccentSubtleBgBrush");
             return Brushes.Transparent;
         }
 

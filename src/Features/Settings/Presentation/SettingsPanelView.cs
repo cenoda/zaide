@@ -190,9 +190,9 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
 
         // ── Status displays ────────────────────────────────────────────
         _errors = TextStyles.Caption("");
-        _errors.Foreground = Brushes.OrangeRed;
+        _errors.Foreground = ThemeBinding.GetBrush("DangerBrush");
         _conflict = TextStyles.Caption("");
-        _conflict.Foreground = Brushes.Orange;
+        _conflict.Foreground = ThemeBinding.GetBrush("WarningBrush");
 
         // ── Button bar ─────────────────────────────────────────────────
         var apply = new Button { Content = "Apply", Command = viewModel.ApplyCommand };
@@ -418,7 +418,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             FontSize = 12,
             FontWeight = FontWeight.SemiBold,
             Foreground = (IBrush?)Application.Current?.Resources["TextPrimaryBrush"]
-                        ?? new SolidColorBrush(Color.Parse("#E3E4F4")),
+                        ?? ThemeBinding.GetBrush("TextPrimaryBrush"),
             Margin = new Thickness(0, LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingXxs)
         });
         foreach (var child in children)

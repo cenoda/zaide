@@ -106,10 +106,8 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
 
         // M3.2 / M3.3: capture the active brushes used by row paint.
         var activeBrush = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
-        var activeBgBrush = new Avalonia.Media.SolidColorBrush(
-            Avalonia.Media.Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
-        var parentFolderBgBrush = new Avalonia.Media.SolidColorBrush(
-            Avalonia.Media.Color.FromArgb(0x08, 0x06, 0x6A, 0xDB));
+        var activeBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
+        var parentFolderBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
         var defaultRowBrush = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
         var hoverBrush = (IBrush?)Application.Current!.Resources["SurfaceRaisedBrush"];
 
@@ -519,10 +517,8 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         if (resources is null) return;
 
         var activeBrush = (IBrush?)resources["PrimaryAccentBrush"];
-        var activeBg = new Avalonia.Media.SolidColorBrush(
-            Avalonia.Media.Color.FromArgb(0x15, 0x06, 0x6A, 0xDB));
-        var parentBg = new Avalonia.Media.SolidColorBrush(
-            Avalonia.Media.Color.FromArgb(0x08, 0x06, 0x6A, 0xDB));
+        var activeBg = ThemeBinding.GetBrush("AccentSubtleBgBrush");
+        var parentBg = ThemeBinding.GetBrush("AccentSubtleBgBrush");
         var defaultBg = (IBrush?)resources["SurfaceBaseBrush"];
 
         var selected = ViewModel?.SelectedFile;

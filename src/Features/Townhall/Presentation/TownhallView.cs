@@ -191,7 +191,7 @@ public class TownhallView : Panel, IDisposable
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingXs,
-            Background = new SolidColorBrush(Color.FromArgb(0x22, 0x24, 0x33, 0x52)),
+            Background = ThemeBinding.GetBrush("SurfaceRaised3Brush"),
             Children =
             {
                 _filterAllButton,
@@ -206,7 +206,7 @@ public class TownhallView : Panel, IDisposable
             Width = 2,
             Height = 22,
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, 0),
-            Background = new SolidColorBrush(Color.FromArgb(0xAA, 0x8B, 0x95, 0xA5)),
+            Background = ThemeBinding.GetBrush("TextSecondaryBrush"),
             VerticalAlignment = VerticalAlignment.Center,
         };
 
@@ -251,7 +251,7 @@ public class TownhallView : Panel, IDisposable
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
             CornerRadius = LayoutTokens.RadiusFull,
             Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
+            BorderThickness = LayoutTokens.NoneThickness,
         };
         Avalonia.Automation.AutomationProperties.SetName(button, automationName);
         return button;

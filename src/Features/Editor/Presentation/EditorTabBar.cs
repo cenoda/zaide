@@ -681,11 +681,8 @@ public partial class EditorTabBar : UserControl
         ToolTip.SetTip(closeButton, "Close tab");
         AutomationProperties.SetName(closeButton, "Close tab");
 
-        // Deliberate 7% white hover overlay per M0.5 per-component assignments
-        // (see IMPLEMENTATION_PLAN.md Nav Bar → Hover overlay). Not a palette token
-        // because it's a transparent blend, not a solid color.
         closeButton.PointerEntered += (_, _) =>
-            closeButton.Background = new SolidColorBrush(Color.Parse("#12FFFFFF"));
+            closeButton.Background = ThemeBinding.GetBrush("OverlayHoverBrush");
         closeButton.PointerExited += (_, _) => closeButton.Background = Brushes.Transparent;
         closeButton.PointerPressed += (_, e) =>
         {
