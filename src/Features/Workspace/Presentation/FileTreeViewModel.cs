@@ -109,10 +109,15 @@ public class FileTreeViewModel : ReactiveObject, IDisposable
     }
 
     /// <summary>
-    /// M3 (Phase 8.1.3): Requests that the owning folder be closed.
     /// Bridged by <c>MainWindowViewModel.Activate()</c> to <c>CloseFolderCommand</c>.
     /// </summary>
     public Interaction<Unit, Unit> CloseFolderRequested { get; } = new();
+
+    /// <summary>
+    /// Fires when the user requests folder picking from the file tree view.
+    /// Bridged by <c>MainWindowActivationHost</c> to <c>OpenFolderCommand</c>.
+    /// </summary>
+    public Interaction<Unit, Unit> PickFolderRequested { get; } = new();
 
     public FileTreeViewModel(IFileTreeService fileTreeService, IScheduler scheduler, ICommandRegistry? commandRegistry = null)
     {

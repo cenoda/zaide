@@ -35,7 +35,6 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     private readonly TextBlock _headerText;
     private readonly Control _headerIcon;
     private readonly Button _closeFolderButton;
-    private IDisposable? _openFolderSubscription;
 
 
     public FileTreeView()
@@ -53,18 +52,11 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         _headerText.Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs, 0, 0, LayoutTokens.SpacingSm);
         _headerText.VerticalAlignment = VerticalAlignment.Center;
 
-        _headerText.PointerPressed += async (_, _) =>
+        _headerText.PointerPressed += (_, _) =>
         {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel is null) return;
-
-            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
-                new FolderPickerOpenOptions { AllowMultiple = false });
-
-            if (folders.Count > 0)
-                _openFolderSubscription = ViewModel!.OpenFolderCommand
-                    .Execute(folders[0].Path.LocalPath)
-                    .Subscribe(_ => { });
+            ViewModel?.PickFolderRequested.Handle(Unit.Default)
+                .Catch(Observable.Return(Unit.Default))
+                .Subscribe();
         };
 
         // M3 (Phase 8.1.3): Close-folder button in header. Visible only when a
@@ -501,9 +493,6 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             // subscription keeps the currently-visible rows in sync.
             d.Add(this.WhenAnyValue(x => x.ViewModel!.SelectedFile)
                 .Subscribe(_ => RepaintAllFileTreeRows()));
-
-            // M5: Dispose of event handlers and subscriptions
-            d.Add(Disposable.Create(() => _openFolderSubscription?.Dispose()));
         });
 
         _treeView.AddHandler(InputElement.KeyDownEvent, (_, e) =>

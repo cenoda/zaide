@@ -65,6 +65,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
     private bool _isTestResultsBottomMode;
     private bool _isDebugBottomMode;
     private bool _isSettingsOpen;
+    private int _isPickingFolder;
     private ProjectContext _currentProjectContext = null!;
     private readonly Workspace _workspace;
     private readonly IProjectContextService _projectContextService;
@@ -158,6 +159,12 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         get => _isSettingsOpen;
         internal set => this.RaiseAndSetIfChanged(ref _isSettingsOpen, value);
     }
+
+    /// <summary>
+    /// True when a folder picker interaction or command execution is currently active.
+    /// Prevents concurrent folder pickers from opening on rapid clicks or shortcut triggers.
+    /// </summary>
+    public bool IsPickingFolder => _isPickingFolder != 0;
 
     public ReactiveCommand<Unit, Unit> ToggleBottomPanelCommand { get; }
     public ReactiveCommand<Unit, Unit> HideBottomPanelCommand { get; }
@@ -272,10 +279,22 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
         // FileTreeViewModel.RootPath in Activate() for every open-folder entry point.
         OpenFolderCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            var path = await PickFolder.Handle(Unit.Default);
-            if (path is not null)
+            if (Interlocked.CompareExchange(ref _isPickingFolder, 1, 0) != 0)
             {
-                await FileTreeViewModel.OpenFolderCommand.Execute(path);
+                return;
+            }
+
+            try
+            {
+                var path = await PickFolder.Handle(Unit.Default);
+                if (path is not null)
+                {
+                    await FileTreeViewModel.OpenFolderCommand.Execute(path);
+                }
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isPickingFolder, 0);
             }
         });
 
@@ -318,6 +337,7 @@ public class MainWindowViewModel : ReactiveObject, IDisposable
             projectContextService,
             () => ProjectContextScheduler,
             CloseFolderCommand,
+            OpenFolderCommand,
             mode => BottomPanelMode = mode,
             visible => IsBottomPanelVisible = visible,
             text => StatusText = text,

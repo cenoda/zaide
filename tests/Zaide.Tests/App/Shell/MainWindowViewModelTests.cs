@@ -462,4 +462,53 @@ public class MainWindowViewModelTests
         service.Verify(s => s.Dispose(), Times.Never);
         Assert.Same(initialSession, terminalHost.ActiveSession);
     }
+
+    [Fact]
+    public async Task OpenFolderCommand_ConcurrentCalls_GuardedByIsPickingFolder()
+    {
+        var vm = CreateViewModel();
+        var tcs = new TaskCompletionSource<string?>();
+        var handleCount = 0;
+
+        using var sub = vm.PickFolder.RegisterHandler(ctx =>
+        {
+            handleCount++;
+            return tcs.Task.ContinueWith(t => ctx.SetOutput(t.Result));
+        });
+
+        Assert.False(vm.IsPickingFolder);
+
+        // First invocation starts folder picking
+        var task1 = vm.OpenFolderCommand.Execute().ToTask();
+        Assert.True(vm.IsPickingFolder);
+        Assert.Equal(1, handleCount);
+
+        // Concurrent invocation while first is active should be ignored
+        var task2 = vm.OpenFolderCommand.Execute().ToTask();
+        await task2;
+        Assert.Equal(1, handleCount);
+        Assert.True(vm.IsPickingFolder);
+
+        // Complete first interaction
+        tcs.SetResult(null);
+        await task1;
+        Assert.False(vm.IsPickingFolder);
+    }
+
+    [Fact]
+    public async Task FileTree_PickFolderRequested_BridgesToOpenFolderCommand()
+    {
+        var vm = CreateViewModel();
+        var handled = false;
+
+        using var sub = vm.PickFolder.RegisterHandler(ctx =>
+        {
+            handled = true;
+            ctx.SetOutput(null);
+            return Task.CompletedTask;
+        });
+
+        await vm.FileTreeViewModel.PickFolderRequested.Handle(Unit.Default);
+        Assert.True(handled);
+    }
 }

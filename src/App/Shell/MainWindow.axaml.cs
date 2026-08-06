@@ -321,14 +321,28 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             // Bind bottom panel visibility and mode routing through the extracted host.
             _bottomPanelHost.WireToViewModel(ViewModel!, disposables);
 
-            // PickFolder handler — opens native folder dialog
+            // PickFolder handler — opens native folder dialog with re-entrancy guard
+            int isPicking = 0;
             disposables.Add(ViewModel!.PickFolder.RegisterHandler(async ctx =>
             {
-                var topLevel = TopLevel.GetTopLevel(this);
-                if (topLevel is null) { ctx.SetOutput(null); return; }
-                var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
-                    new FolderPickerOpenOptions { AllowMultiple = false });
-                ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
+                if (Interlocked.CompareExchange(ref isPicking, 1, 0) != 0)
+                {
+                    ctx.SetOutput(null);
+                    return;
+                }
+
+                try
+                {
+                    var topLevel = TopLevel.GetTopLevel(this);
+                    if (topLevel is null) { ctx.SetOutput(null); return; }
+                    var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(
+                        new FolderPickerOpenOptions { AllowMultiple = false });
+                    ctx.SetOutput(folders.Count > 0 ? folders[0].Path.LocalPath : null);
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref isPicking, 0);
+                }
             }));
 
             _settingsPanelAttachHost.WireToViewModel(ViewModel!, disposables);

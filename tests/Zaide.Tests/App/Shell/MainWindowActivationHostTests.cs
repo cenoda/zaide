@@ -393,6 +393,7 @@ public sealed class MainWindowActivationHostTests
     [InlineData("projectContextService")]
     [InlineData("getProjectContextScheduler")]
     [InlineData("closeFolderCommand")]
+    [InlineData("openFolderCommand")]
     [InlineData("setBottomPanelMode")]
     [InlineData("setIsBottomPanelVisible")]
     [InlineData("setStatusText")]
@@ -633,6 +634,7 @@ public sealed class MainWindowActivationHostTests
 
         var location = debugCurrentLocation?.Invoke(editorTabs);
         var closeFolder = ReactiveCommand.Create(() => { });
+        var openFolder = ReactiveCommand.Create(() => { });
 
         var host = new MainWindowActivationHost(
             TestProblemsFactory.Create(workspace, editorTabs),
@@ -650,6 +652,7 @@ public sealed class MainWindowActivationHostTests
             projectContext,
             getScheduler ?? (() => ImmediateScheduler.Instance),
             closeFolder,
+            openFolder,
             _ => { },
             _ => { },
             _ => { },
@@ -692,6 +695,7 @@ public sealed class MainWindowActivationHostTests
         projectContext.Setup(s => s.WhenChanged).Returns(Observable.Never<ProjectContext>());
         projectContext.Setup(s => s.Current).Returns(UnloadedContext());
         var closeFolder = ReactiveCommand.Create(() => { });
+        var openFolder = ReactiveCommand.Create(() => { });
 
         ProblemsViewModel problems = TestProblemsFactory.Create(workspace, editorTabs);
         ProjectWorkflowViewModel workflow = TestProjectWorkflowFactory.Create();
@@ -722,6 +726,7 @@ public sealed class MainWindowActivationHostTests
             nullParam == "projectContextService" ? null! : projectContext.Object,
             nullParam == "getProjectContextScheduler" ? null! : getScheduler,
             nullParam == "closeFolderCommand" ? null! : closeFolder,
+            nullParam == "openFolderCommand" ? null! : openFolder,
             nullParam == "setBottomPanelMode" ? null! : setBottom,
             nullParam == "setIsBottomPanelVisible" ? null! : setVisible,
             nullParam == "setStatusText" ? null! : setStatus,

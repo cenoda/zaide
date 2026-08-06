@@ -20,7 +20,7 @@ intentional.
 
 **New finding (2026-08-06):** F15 catalogued from screenshot/report (multiple clicks on "Open Folder" spawn concurrent picker dialogs).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6; F15 pending). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15 fixed). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -839,7 +839,7 @@ alignment is more normal.
 
 ### F15 — Multiple clicks on "Open Folder" spawn concurrent folder picker dialogs
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — Bridged `FileTreeView` header click to `FileTreeViewModel.PickFolderRequested` interaction, wired via `MainWindowActivationHost` to `MainWindowViewModel.OpenFolderCommand`. Added an `Interlocked` re-entrancy guard (`IsPickingFolder`) in `OpenFolderCommand` and in `MainWindow.axaml.cs` native picker handler to prevent concurrent picker dialogs from opening on rapid clicks or keybindings. Verified with unit tests (`OpenFolderCommand_ConcurrentCalls_GuardedByIsPickingFolder` and `FileTree_PickFolderRequested_BridgesToOpenFolderCommand`).
 
 **Severity:** Low–Medium (UX glitch / multiple system dialogs)  
 **Difficulty:** XS–S  

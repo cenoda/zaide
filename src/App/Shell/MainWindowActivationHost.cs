@@ -41,6 +41,7 @@ internal sealed class MainWindowActivationHost
     private readonly IProjectContextService _projectContextService;
     private readonly Func<IScheduler> _getProjectContextScheduler;
     private readonly ReactiveCommand<Unit, Unit> _closeFolderCommand;
+    private readonly ReactiveCommand<Unit, Unit> _openFolderCommand;
     private readonly Action<BottomPanelMode> _setBottomPanelMode;
     private readonly Action<bool> _setIsBottomPanelVisible;
     private readonly Action<string?> _setStatusText;
@@ -63,6 +64,7 @@ internal sealed class MainWindowActivationHost
         IProjectContextService projectContextService,
         Func<IScheduler> getProjectContextScheduler,
         ReactiveCommand<Unit, Unit> closeFolderCommand,
+        ReactiveCommand<Unit, Unit> openFolderCommand,
         Action<BottomPanelMode> setBottomPanelMode,
         Action<bool> setIsBottomPanelVisible,
         Action<string?> setStatusText,
@@ -84,6 +86,7 @@ internal sealed class MainWindowActivationHost
         _projectContextService = projectContextService ?? throw new ArgumentNullException(nameof(projectContextService));
         _getProjectContextScheduler = getProjectContextScheduler ?? throw new ArgumentNullException(nameof(getProjectContextScheduler));
         _closeFolderCommand = closeFolderCommand ?? throw new ArgumentNullException(nameof(closeFolderCommand));
+        _openFolderCommand = openFolderCommand ?? throw new ArgumentNullException(nameof(openFolderCommand));
         _setBottomPanelMode = setBottomPanelMode ?? throw new ArgumentNullException(nameof(setBottomPanelMode));
         _setIsBottomPanelVisible = setIsBottomPanelVisible ?? throw new ArgumentNullException(nameof(setIsBottomPanelVisible));
         _setStatusText = setStatusText ?? throw new ArgumentNullException(nameof(setStatusText));
@@ -176,6 +179,13 @@ internal sealed class MainWindowActivationHost
                 {
                     _closeFolderCommand.Execute().GetAwaiter().GetResult();
                 }
+                interaction.SetOutput(Unit.Default);
+            }));
+
+        disposables.Add(
+            _fileTreeViewModel.PickFolderRequested.RegisterHandler(async interaction =>
+            {
+                await _openFolderCommand.Execute();
                 interaction.SetOutput(Unit.Default);
             }));
 
