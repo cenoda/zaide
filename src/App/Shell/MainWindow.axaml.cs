@@ -197,6 +197,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             // Wire TownhallView to its ViewModel
             _townhallView.ViewModel = ViewModel!.TownhallViewModel;
+            _townhallView.OpenSettingsRequested = () =>
+                ViewModel.ShowSettings.Handle(Unit.Default).Subscribe();
 
             // Wire FileTreeView to its ViewModel
             _fileTreeView.ViewModel = ViewModel!.FileTreeViewModel;

@@ -314,7 +314,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 22.4 M2: +2 AgentMemoryPanel and AgentMemorySurfaceState source files (880).
         // Phase 22.4 M3: +3 AgentUsagePanel, AgentUsageSurfaceState, AgentUsageAggregationSemantics (883).
         // Phase 23 F1: +1 AgentInspectHost (884).
-        Assert.Equal(884, inventory.SourceFiles.Count);
+        // Phase 23 F10: +1 IconLucideMap (885).
+        Assert.Equal(885, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -322,7 +323,8 @@ public sealed class ArchitectureInventoryTests
         Assert.False(byFolder.ContainsKey("Views"));
         Assert.False(byFolder.ContainsKey("Styles"));
         // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
-        Assert.Equal(42, byFolder["App"]);
+        // Phase 23 F10: +1 IconLucideMap (43).
+        Assert.Equal(43, byFolder["App"]);
         Assert.Equal(4, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files.

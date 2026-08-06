@@ -29,6 +29,7 @@ internal sealed class AgentTracePanel : Panel, IDisposable
     private bool _suppressRecordSelection;
     private readonly Button _captureButton;
     private readonly Button _refreshButton;
+    private readonly Button _openSettingsButton;
     private readonly Button _closeButton;
     private AgentTransparencyManagementViewModel? _viewModel;
 
@@ -89,6 +90,8 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         _captureButton.Click += async (_, _) => await ToggleCaptureAsync();
         _refreshButton = CreateButton("Refresh", "Refresh trace evidence");
         _refreshButton.Click += async (_, _) => await RefreshAsync();
+        _openSettingsButton = CreateButton("Open Settings", "Open application settings");
+        _openSettingsButton.Click += (_, _) => OpenSettingsRequested?.Invoke();
         _closeButton = CreateButton("Close", "Close trace panel");
         _closeButton.Click += (_, _) => _viewModel?.CloseTraceCommand.Execute().Subscribe();
 
@@ -96,7 +99,7 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
-            Children = { _captureButton, _refreshButton, _closeButton },
+            Children = { _captureButton, _refreshButton, _openSettingsButton, _closeButton },
         };
 
         var body = new StackPanel
@@ -128,6 +131,8 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         IsVisible = false;
     }
 
+    public Action? OpenSettingsRequested { get; set; }
+
     public void SetViewModel(AgentTransparencyManagementViewModel? viewModel)
     {
         if (_viewModel is not null)
@@ -148,6 +153,8 @@ internal sealed class AgentTracePanel : Panel, IDisposable
     public Button CaptureButton => _captureButton;
 
     public Button RefreshButton => _refreshButton;
+
+    public Button OpenSettingsButton => _openSettingsButton;
 
     public Button CloseButton => _closeButton;
 
@@ -215,6 +222,7 @@ internal sealed class AgentTracePanel : Panel, IDisposable
             _summaryCaption.Text = "Trace surface is not available.";
             _recordsCaption.Text = "No records.";
             _selectionCaption.Text = "No record selected.";
+            ApplyChromeVisibility(TraceChromeMode.Unavailable);
             SetActionsEnabled(enabled: false);
             return;
         }
@@ -222,6 +230,7 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         var summary = inspection.Summary;
         var records = inspection.Records;
         var captureEnabled = inspection.Availability.CaptureEnabled;
+        var chromeMode = ResolveChromeMode(summary, records, captureEnabled);
 
         if (summary is null || summary.IsEmpty)
         {
@@ -256,10 +265,45 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         AutomationProperties.SetHelpText(_summaryCaption, _summaryCaption.Text);
         AutomationProperties.SetHelpText(_recordsCaption, _recordsCaption.Text);
 
-        var enabled = _viewModel is not null;
-        SetActionsEnabled(enabled: enabled);
+        ApplyChromeVisibility(chromeMode);
+        SetActionsEnabled(enabled: _viewModel is not null);
         var enabledCapture = captureEnabled;
         _captureButton.Content = TextStyles.Caption(enabledCapture ? "Disable capture" : "Enable capture");
+    }
+
+    private static TraceChromeMode ResolveChromeMode(
+        AgentTraceInspectionSummary? summary,
+        System.Collections.Generic.IReadOnlyList<AgentTraceRecord> records,
+        bool captureEnabled)
+    {
+        if (!captureEnabled)
+        {
+            return TraceChromeMode.MinimalCaptureOff;
+        }
+
+        if ((summary is null || summary.IsEmpty) && records.Count == 0)
+        {
+            return TraceChromeMode.MinimalEmpty;
+        }
+
+        return TraceChromeMode.Full;
+    }
+
+    private void ApplyChromeVisibility(TraceChromeMode mode)
+    {
+        var full = mode == TraceChromeMode.Full;
+        var minimalEmpty = mode == TraceChromeMode.MinimalEmpty;
+        var minimalCaptureOff = mode == TraceChromeMode.MinimalCaptureOff;
+
+        SetInteractiveVisible(_recordSelector, full);
+        SetVisible(_recordsCaption, full);
+        SetVisible(_selectionCaption, full);
+        SetVisible(_pagingCaption, full);
+        SetInteractiveVisible(_captureButton, full);
+        SetInteractiveVisible(_refreshButton, full || minimalEmpty);
+        SetInteractiveVisible(_openSettingsButton, minimalCaptureOff);
+        SetInteractiveVisible(_closeButton, true);
+        SetVisible(_summaryCaption, full || minimalEmpty || mode == TraceChromeMode.Unavailable);
     }
 
     private void SyncRecordSelector(AgentTraceInspectionViewModel inspection)
@@ -291,10 +335,32 @@ internal sealed class AgentTracePanel : Panel, IDisposable
 
     private void SetActionsEnabled(bool enabled)
     {
-        _captureButton.IsEnabled = enabled;
-        _refreshButton.IsEnabled = enabled;
+        if (_captureButton.IsVisible)
+        {
+            _captureButton.IsEnabled = enabled;
+        }
+
+        if (_refreshButton.IsVisible)
+        {
+            _refreshButton.IsEnabled = enabled;
+        }
+
         _closeButton.IsEnabled = enabled;
-        _recordSelector.IsEnabled = enabled;
+        if (_recordSelector.IsVisible)
+        {
+            _recordSelector.IsEnabled = enabled;
+        }
+    }
+
+    private static void SetVisible(Control control, bool visible)
+    {
+        control.IsVisible = visible;
+    }
+
+    private static void SetInteractiveVisible(Control control, bool visible)
+    {
+        control.IsVisible = visible;
+        control.IsTabStop = visible;
     }
 
     private static string FormatOption(AgentTraceRecord record) =>
@@ -317,6 +383,14 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         };
         AutomationProperties.SetName(button, automationName);
         return button;
+    }
+
+    private enum TraceChromeMode
+    {
+        Full,
+        MinimalEmpty,
+        MinimalCaptureOff,
+        Unavailable,
     }
 
     private sealed class TraceRecordOption

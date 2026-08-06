@@ -78,6 +78,13 @@ public class TownhallView : Panel, IDisposable
     /// <summary>Hosted Usage panel for accessibility and integration proofs.</summary>
     internal AgentUsagePanel UsagePanel => _inspectHost.UsagePanel;
 
+    /// <summary>Opens application settings from inspect empty-state affordances.</summary>
+    public Action? OpenSettingsRequested
+    {
+        get => _inspectHost.OpenSettingsRequested;
+        set => _inspectHost.OpenSettingsRequested = value;
+    }
+
     public TownhallView()
     {
         _peoplePanel = new TownhallPeoplePanel { Background = PaletteTokens.SurfacePanelBrush };

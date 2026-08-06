@@ -191,7 +191,8 @@ public sealed class ArchitectureVisibilityTests
         // Refactor 8 M4: +1 MainLayoutBuilder production file.
         // Refactor 8 M5: +2 SettingsPanelAttachHost, ShellOverlayFocusWiring production files.
         // Phase 22.4 M1: +1 AgentTransparencyCommandRegistration (42).
-        Assert.Equal(42, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
+        // Phase 23 F10: +1 IconLucideMap (43).
+        Assert.Equal(43, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         Assert.Equal(4, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.

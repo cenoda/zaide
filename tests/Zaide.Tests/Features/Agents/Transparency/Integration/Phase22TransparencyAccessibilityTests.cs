@@ -95,32 +95,22 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
             Assert.True(usage.Focusable);
             Assert.True(trace.IsTabStop);
 
-            AssertNamedFocusableTabStop(trace.CaptureButton, "Enable or disable trace capture");
-            AssertNamedFocusableTabStop(trace.RefreshButton, "Refresh trace evidence");
             AssertNamedFocusableTabStop(trace.CloseButton, "Close trace panel");
-            Assert.Equal("Trace record selection", AutomationProperties.GetName(trace.RecordSelector));
-            Assert.True(trace.RecordSelector.Focusable);
-            Assert.True(trace.RecordSelector.IsTabStop);
-            Assert.Equal("Trace capture status", AutomationProperties.GetName(trace.StatusCaptionControl));
-            Assert.False(string.IsNullOrWhiteSpace(trace.StatusCaptionControl.Text));
-            Assert.Equal(
-                trace.StatusCaptionControl.Text,
-                AutomationProperties.GetHelpText(trace.StatusCaptionControl));
-            Assert.Equal("Trace bounded paging", AutomationProperties.GetName(trace.PagingCaptionControl));
-            Assert.Contains(
-                AgentTransparencyManagementViewModel.DefaultPageSize.ToString(),
-                trace.PagingCaptionControl.Text,
-                StringComparison.Ordinal);
+            AssertNamedFocusableTabStop(trace.OpenSettingsButton, "Open application settings");
+            Assert.False(trace.RecordSelector.IsVisible);
+            Assert.False(trace.PagingCaptionControl.IsVisible);
+            Assert.False(trace.CaptureButton.IsVisible);
 
             AssertNamedFocusableTabStop(memory.CreateButtonControl, "Create durable memory record");
             AssertNamedFocusableTabStop(memory.RefreshButton, "Refresh durable memory");
             AssertNamedFocusableTabStop(memory.RetryButton, "Retry failed durable memory load");
             AssertNamedFocusableTabStop(memory.CloseButton, "Close memory panel");
 
-            AssertNamedFocusableTabStop(usage.CaptureButton, "Enable or disable usage capture");
             AssertNamedFocusableTabStop(usage.RefreshButton, "Refresh usage evidence");
-            AssertNamedFocusableTabStop(usage.RetryButton, "Retry failed usage load");
             AssertNamedFocusableTabStop(usage.CloseButton, "Close usage panel");
+            Assert.False(usage.CaptureButton.IsVisible);
+            Assert.False(usage.RecordSelector.IsVisible);
+            Assert.False(usage.RetryButton.IsVisible);
         }
         finally
         {
@@ -144,16 +134,16 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
         Assert.Equal(128, management.ClampPageSize(128));
         Assert.Equal(256, management.ClampPageSize(10_000));
 
-        // Live panels publish the clamped paging contract for screen readers.
+        // Live panels publish the clamped paging contract when full chrome is active.
         var trace = new AgentTracePanel();
         try
         {
             management.OpenTraceCommand.Execute().Subscribe();
+            management.ToggleTraceCaptureCommand.Execute().Subscribe();
             management.RefreshTracePresentation();
             trace.SetViewModel(management);
-            Assert.Equal("Trace bounded paging", AutomationProperties.GetName(trace.PagingCaptionControl));
-            Assert.Contains("64", trace.PagingCaptionControl.Text, StringComparison.Ordinal);
-            Assert.Contains("256", trace.PagingCaptionControl.Text, StringComparison.Ordinal);
+            Assert.False(trace.PagingCaptionControl.IsVisible);
+
             Assert.Equal(
                 "Agent transparency and memory management",
                 management.AccessibilityName);

@@ -42,7 +42,7 @@ public sealed class Phase23TransparencyCaptionProjectionTests : IDisposable
     }
 
     [Fact]
-    public void TracePanel_EmptyCaptureDisabled_ProjectsStatusOnceAndPolicyHelpInSummary()
+    public void TracePanel_EmptyCaptureDisabled_ProjectsStatusOnceWithoutSummaryChrome()
     {
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         management.OpenTraceCommand.Execute().Subscribe();
@@ -54,10 +54,8 @@ public sealed class Phase23TransparencyCaptionProjectionTests : IDisposable
             trace.SetViewModel(management);
 
             var statusText = trace.StatusCaptionControl.Text ?? string.Empty;
-            var summaryText = trace.SummaryCaptionControl.Text ?? string.Empty;
             Assert.Contains("disabled", statusText, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain(statusText, summaryText, StringComparison.Ordinal);
-            Assert.Contains("not empty fabrication", summaryText, StringComparison.OrdinalIgnoreCase);
+            Assert.False(trace.SummaryCaptionControl.IsVisible);
         }
         finally
         {

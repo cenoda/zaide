@@ -30,7 +30,11 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
     private readonly TextBox _draftInput;
     private readonly ComboBox _scopeSelector;
     private readonly ComboBox _recordSelector;
+    private readonly StackPanel _scopeRow;
+    private readonly StackPanel _lifecycleActions;
     private bool _suppressRecordSelection;
+    private bool _composeVisible;
+    private bool _createSubmitAttempted;
     private readonly Button _createButton;
     private readonly Button _correctButton;
     private readonly Button _disableButton;
@@ -148,7 +152,7 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
         _closeButton = CreateButton("Close", "Close memory panel");
         _closeButton.Click += (_, _) => _viewModel?.CloseMemoryCommand.Execute().Subscribe();
 
-        var scopeRow = new StackPanel
+        _scopeRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
@@ -161,7 +165,7 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
             },
         };
 
-        var lifecycleActions = new StackPanel
+        _lifecycleActions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
@@ -194,10 +198,10 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
                 _recordsCaption,
                 _selectionCaption,
                 _influenceCaption,
-                scopeRow,
+                _scopeRow,
                 _draftInput,
                 _submitDenialCaption,
-                lifecycleActions,
+                _lifecycleActions,
                 surfaceActions,
             },
         };
@@ -226,6 +230,7 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
+        ResetEmptyComposeState();
         ApplyProjection();
         _ = RefreshAsync();
     }
@@ -246,9 +251,17 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
 
     public Button CloseButton => _closeButton;
 
+    public ComboBox RecordSelector => _recordSelector;
+
+    public TextBox DraftInput => _draftInput;
+
     public TextBlock StatusCaptionControl => _statusCaption;
 
     public TextBlock SummaryCaptionControl => _summaryCaption;
+
+    public TextBlock SubmitDenialCaptionControl => _submitDenialCaption;
+
+    public StackPanel LifecycleActionsControl => _lifecycleActions;
 
     public void Dispose()
     {
@@ -266,13 +279,22 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
             return;
         }
 
+        var inspection = _viewModel.MemoryInspection;
+        if (inspection.SurfaceState == AgentMemorySurfaceState.Empty && !_composeVisible)
+        {
+            _composeVisible = true;
+            ApplyProjection();
+            return;
+        }
+
         _viewModel.MemoryInspection.DraftContent = _draftInput.Text ?? string.Empty;
         if (_scopeSelector.SelectedItem is AgentMemoryScope scope)
         {
             _viewModel.MemoryInspection.SelectedScope = scope;
         }
 
-        _viewModel.CreateMemoryFromDraft();
+        var result = _viewModel.CreateMemoryFromDraft();
+        _createSubmitAttempted = result.Status != AgentMemoryOperationStatus.Accepted;
         _draftInput.Text = _viewModel.MemoryInspection.DraftContent;
         ApplyProjection();
     }
@@ -339,6 +361,12 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
             or nameof(AgentTransparencyManagementViewModel.MemoryStatusCaption)
             or nameof(AgentTransparencyManagementViewModel.MemoryInspection))
         {
+            if (eventArgs.PropertyName is nameof(AgentTransparencyManagementViewModel.IsMemoryPanelOpen)
+                && _viewModel?.IsMemoryPanelOpen != true)
+            {
+                ResetEmptyComposeState();
+            }
+
             ApplyProjection();
         }
     }
@@ -357,9 +385,18 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
             _recordsCaption.Text = "No records.";
             _selectionCaption.Text = "No record selected.";
             _submitDenialCaption.Text = string.Empty;
+            ApplyChromeVisibility(minimalEmpty: false, composeVisible: false, showDenial: false);
             SetActionsEnabled(enabled: false, canRetry: false, canCreate: false, hasSelection: false);
             return;
         }
+
+        if (inspection.SurfaceState != AgentMemorySurfaceState.Empty)
+        {
+            ResetEmptyComposeState();
+        }
+
+        var minimalEmpty = inspection.SurfaceState == AgentMemorySurfaceState.Empty;
+        var composeVisible = minimalEmpty && _composeVisible;
 
         switch (inspection.SurfaceState)
         {
@@ -398,20 +435,66 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
             ? "No record selected."
             : FormatSelected(selected);
 
-        _submitDenialCaption.Text = inspection.CanSubmitCreate
+        var denialText = inspection.CanSubmitCreate
             ? string.Empty
             : inspection.SubmitDenialReason ?? "Create is unavailable.";
+        var showDenial = _createSubmitAttempted && !string.IsNullOrEmpty(denialText);
+        _submitDenialCaption.Text = showDenial ? denialText : string.Empty;
 
         var hasSelection = selected is not null;
+        ApplyChromeVisibility(minimalEmpty, composeVisible, showDenial);
         SetActionsEnabled(
             enabled: inspection.SurfaceState is AgentMemorySurfaceState.Ready
                 or AgentMemorySurfaceState.Empty
                 or AgentMemorySurfaceState.Failed
                 or AgentMemorySurfaceState.Unavailable,
             canRetry: inspection.CanRetry,
-            canCreate: inspection.CanSubmitCreate,
+            canCreate: minimalEmpty || inspection.CanSubmitCreate,
             hasSelection: hasSelection
                 && inspection.SurfaceState is AgentMemorySurfaceState.Ready or AgentMemorySurfaceState.Empty);
+    }
+
+    private void ApplyChromeVisibility(bool minimalEmpty, bool composeVisible, bool showDenial)
+    {
+        var full = !minimalEmpty;
+        var showCompose = full || composeVisible;
+
+        SetInteractiveVisible(_recordSelector, full);
+        SetVisible(_recordsCaption, full);
+        SetVisible(_selectionCaption, full);
+        SetVisible(_influenceCaption, full);
+        SetVisible(_scopeRow, showCompose);
+        SetInteractiveVisible(_draftInput, showCompose);
+        SetVisible(_submitDenialCaption, showDenial);
+        SetVisible(_lifecycleActions, full || minimalEmpty);
+        SetInteractiveVisible(_createButton, full || minimalEmpty);
+        if (full)
+        {
+            SetInteractiveVisible(_correctButton, true);
+            SetInteractiveVisible(_disableButton, true);
+            SetInteractiveVisible(_supersedeButton, true);
+            SetInteractiveVisible(_deleteButton, true);
+        }
+        else if (composeVisible)
+        {
+            SetInteractiveVisible(_correctButton, false);
+            SetInteractiveVisible(_disableButton, false);
+            SetInteractiveVisible(_supersedeButton, false);
+            SetInteractiveVisible(_deleteButton, false);
+        }
+        else
+        {
+            SetInteractiveVisible(_correctButton, false);
+            SetInteractiveVisible(_disableButton, false);
+            SetInteractiveVisible(_supersedeButton, false);
+            SetInteractiveVisible(_deleteButton, false);
+        }
+    }
+
+    private void ResetEmptyComposeState()
+    {
+        _composeVisible = false;
+        _createSubmitAttempted = false;
     }
 
     private void SyncRecordSelector(AgentMemoryInspectionViewModel inspection)
@@ -444,16 +527,54 @@ internal sealed class AgentMemoryPanel : Panel, IDisposable
 
     private void SetActionsEnabled(bool enabled, bool canRetry, bool canCreate, bool hasSelection)
     {
-        _createButton.IsEnabled = enabled && canCreate;
-        _correctButton.IsEnabled = enabled && hasSelection;
-        _disableButton.IsEnabled = enabled && hasSelection;
-        _supersedeButton.IsEnabled = enabled && hasSelection;
-        _deleteButton.IsEnabled = enabled && hasSelection;
+        if (_createButton.IsVisible)
+        {
+            _createButton.IsEnabled = enabled && (canCreate || _composeVisible);
+        }
+
+        if (_correctButton.IsVisible)
+        {
+            _correctButton.IsEnabled = enabled && hasSelection;
+        }
+
+        if (_disableButton.IsVisible)
+        {
+            _disableButton.IsEnabled = enabled && hasSelection;
+        }
+
+        if (_supersedeButton.IsVisible)
+        {
+            _supersedeButton.IsEnabled = enabled && hasSelection;
+        }
+
+        if (_deleteButton.IsVisible)
+        {
+            _deleteButton.IsEnabled = enabled && hasSelection;
+        }
+
         _refreshButton.IsEnabled = _viewModel is not null;
         _retryButton.IsEnabled = canRetry;
         _closeButton.IsEnabled = _viewModel is not null;
-        _draftInput.IsEnabled = enabled;
-        _scopeSelector.IsEnabled = enabled;
+        if (_draftInput.IsVisible)
+        {
+            _draftInput.IsEnabled = enabled;
+        }
+
+        if (_scopeSelector.IsVisible)
+        {
+            _scopeSelector.IsEnabled = enabled;
+        }
+    }
+
+    private static void SetVisible(Control control, bool visible)
+    {
+        control.IsVisible = visible;
+    }
+
+    private static void SetInteractiveVisible(Control control, bool visible)
+    {
+        control.IsVisible = visible;
+        control.IsTabStop = visible;
     }
 
     private static string FormatRecords(AgentMemoryInspectionViewModel inspection)

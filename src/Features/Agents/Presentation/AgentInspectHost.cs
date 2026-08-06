@@ -24,6 +24,7 @@ internal sealed class AgentInspectHost : Panel, IDisposable
     private readonly AgentUsagePanel _usagePanel;
     private readonly Border _chrome;
     private AgentTransparencyManagementViewModel? _viewModel;
+    private Action? _openSettingsRequested;
 
     public AgentInspectHost()
     {
@@ -98,6 +99,17 @@ internal sealed class AgentInspectHost : Panel, IDisposable
     internal AgentMemoryPanel MemoryPanel => _memoryPanel;
 
     internal AgentUsagePanel UsagePanel => _usagePanel;
+
+    public Action? OpenSettingsRequested
+    {
+        get => _openSettingsRequested;
+        set
+        {
+            _openSettingsRequested = value;
+            _tracePanel.OpenSettingsRequested = value;
+            _usagePanel.OpenSettingsRequested = value;
+        }
+    }
 
     public void SetViewModel(AgentTransparencyManagementViewModel? viewModel)
     {

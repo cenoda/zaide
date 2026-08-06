@@ -22,7 +22,7 @@ intentional.
 
 **New finding (2026-08-06):** F16 catalogued from user report (Source Control commit message input box height fixed single-line with `AcceptsReturn = false`).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave: F1 + F12 + F9 + F10 fixed; F3 remaining.**
+**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15, F16 fixed). M wave complete (F1, F12, F9, F10, F3 fixed). Remaining: L/XL wave (F7 → F8 optional → F5).**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -226,7 +226,12 @@ or reselect the conversation after scrub if the app was already running.
 
 ### F3 — Empty surfaces still render full inspection chrome
 
-- [ ] Not fixed
+- [x] Fixed (2026-08-06) — empty / capture-off inspect surfaces hide record
+      selectors, paging, lifecycle toolbars, and standing create-denial copy;
+      operational actions (Create, Refresh, Close, Open Settings when capture
+      off) remain. Plan: [F3_EMPTY_CHROME_PLAN.md](./F3_EMPTY_CHROME_PLAN.md).
+      Commit `4feaf431`. Covered by `Phase23EmptyInspectChromeTests` (+ caption/a11y
+      test updates).
 
 **Severity:** Medium
 **Difficulty:** M–L
@@ -938,9 +943,7 @@ chat Star band preserved; open-flag exclusivity unchanged. F3 not bundled.
 
 Remaining difficulty-first waves:
 
-1. **XS/S (new finding):** F15
-2. **M:** F12 → F9 → F10 → F3
-3. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
+1. **L/XL:** F7 → F8 (optional) → F5 (own milestone)
 
 One reviewable commit per coherent outcome. Do not batch F5 with polish.
 

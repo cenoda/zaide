@@ -29,6 +29,7 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
     private readonly Button _captureButton;
     private readonly Button _refreshButton;
     private readonly Button _retryButton;
+    private readonly Button _openSettingsButton;
     private readonly Button _closeButton;
     private AgentTransparencyManagementViewModel? _viewModel;
 
@@ -84,6 +85,8 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         _refreshButton.Click += async (_, _) => await RefreshAsync();
         _retryButton = CreateButton("Retry", "Retry failed usage load");
         _retryButton.Click += async (_, _) => await RetryAsync();
+        _openSettingsButton = CreateButton("Open Settings", "Open application settings");
+        _openSettingsButton.Click += (_, _) => OpenSettingsRequested?.Invoke();
         _closeButton = CreateButton("Close", "Close usage panel");
         _closeButton.Click += (_, _) => _viewModel?.CloseUsageCommand.Execute().Subscribe();
 
@@ -91,7 +94,7 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
-            Children = { _captureButton, _refreshButton, _retryButton, _closeButton },
+            Children = { _captureButton, _refreshButton, _retryButton, _openSettingsButton, _closeButton },
         };
 
         var body = new StackPanel
@@ -121,6 +124,8 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         IsVisible = false;
     }
 
+    public Action? OpenSettingsRequested { get; set; }
+
     public void SetViewModel(AgentTransparencyManagementViewModel? viewModel)
     {
         if (_viewModel is not null)
@@ -144,7 +149,11 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
 
     public Button RetryButton => _retryButton;
 
+    public Button OpenSettingsButton => _openSettingsButton;
+
     public Button CloseButton => _closeButton;
+
+    public ComboBox RecordSelector => _recordSelector;
 
     public TextBlock StatusCaptionControl => _statusCaption;
 
@@ -213,9 +222,13 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
             _summaryCaption.Text = "Usage surface is not available.";
             _recordsCaption.Text = "No records.";
             _selectionCaption.Text = "No record selected.";
+            ApplyChromeVisibility(minimalEmpty: false, captureEnabled: false);
             SetActionsEnabled(enabled: false, canRetry: false);
             return;
         }
+
+        var captureEnabled = _viewModel?.UsageAvailability.CurrentState.CaptureEnabled == true;
+        var minimalEmpty = inspection.SurfaceState == AgentUsageSurfaceState.Empty;
 
         switch (inspection.SurfaceState)
         {
@@ -249,15 +262,30 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
             ? FormatSelected(selected)
             : "No record selected.";
 
+        ApplyChromeVisibility(minimalEmpty, captureEnabled);
         var enabled = inspection.SurfaceState is AgentUsageSurfaceState.Ready
             or AgentUsageSurfaceState.Empty
             or AgentUsageSurfaceState.Failed
             or AgentUsageSurfaceState.Unavailable;
         SetActionsEnabled(enabled: enabled, canRetry: inspection.CanRetry);
 
-        var captureEnabled = _viewModel?.UsageAvailability.CurrentState.CaptureEnabled == true;
         _captureButton.Content = TextStyles.Caption(
             captureEnabled ? "Disable capture" : "Enable capture");
+    }
+
+    private void ApplyChromeVisibility(bool minimalEmpty, bool captureEnabled)
+    {
+        var full = !minimalEmpty;
+        var minimalCaptureOff = minimalEmpty && !captureEnabled;
+
+        SetInteractiveVisible(_recordSelector, full);
+        SetVisible(_recordsCaption, full);
+        SetVisible(_selectionCaption, full);
+        SetInteractiveVisible(_captureButton, full);
+        SetInteractiveVisible(_refreshButton, true);
+        SetInteractiveVisible(_retryButton, full);
+        SetInteractiveVisible(_openSettingsButton, minimalCaptureOff);
+        SetInteractiveVisible(_closeButton, true);
     }
 
     private void SyncRecordSelector(AgentUsageInspectionViewModel inspection)
@@ -289,11 +317,33 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
 
     private void SetActionsEnabled(bool enabled, bool canRetry)
     {
-        _captureButton.IsEnabled = _viewModel is not null;
+        if (_captureButton.IsVisible)
+        {
+            _captureButton.IsEnabled = _viewModel is not null;
+        }
+
         _refreshButton.IsEnabled = _viewModel is not null && enabled;
-        _retryButton.IsEnabled = canRetry;
+        if (_retryButton.IsVisible)
+        {
+            _retryButton.IsEnabled = canRetry;
+        }
+
         _closeButton.IsEnabled = _viewModel is not null;
-        _recordSelector.IsEnabled = enabled;
+        if (_recordSelector.IsVisible)
+        {
+            _recordSelector.IsEnabled = enabled;
+        }
+    }
+
+    private static void SetVisible(Control control, bool visible)
+    {
+        control.IsVisible = visible;
+    }
+
+    private static void SetInteractiveVisible(Control control, bool visible)
+    {
+        control.IsVisible = visible;
+        control.IsTabStop = visible;
     }
 
     private static string FormatSummary(AgentUsageInspectionViewModel inspection)
