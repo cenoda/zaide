@@ -20,7 +20,9 @@ intentional.
 
 **New finding (2026-08-06):** F15 catalogued from screenshot/report (multiple clicks on "Open Folder" spawn concurrent picker dialogs).
 
-**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15 fixed). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
+**New finding (2026-08-06):** F16 catalogued from user report (Source Control commit message input box height fixed single-line with `AcceptsReturn = false`).
+
+**XS/S wave complete (F13, F11, F2, F4, F14, F6, F15 fixed; F16 catalogued/pending). M wave: F1 + F12 fixed; F9 → F10 → F3 remaining.**
 
 ## Design direction (locked for Phase 23 indexing)
 
@@ -89,6 +91,7 @@ Scale (effort for a careful implementer who already knows the repo):
 | **F8** | PNG / images not openable | Low–Med | **M–L** | High (unsupported type) — **policy choice A/B** | Optional / later |
 | **F5** | Move most config to Settings | High | **XL** | High direction; implementation wide | Last / own milestone |
 | **F15** | Multiple clicks on "Open Folder" spawn concurrent picker dialogs | Low–Med | **XS–S** | High (`PointerPressed` / picker re-entrancy guard missing) | Solo explorer / shell |
+| **F16** | Commit message input box height fixed single-line | Cosmetic | **XS** | High (`SourceControlPanel.cs` `_commitInput` `AcceptsReturn = false`, `Height = 32`) | Solo Source Control / UX |
 
 **Difficulty-first fix order (not severity-only):**
 
@@ -857,6 +860,27 @@ alignment is more normal.
 **Notes for implementers:**  
 - `FileTreeView.cs` attaches a raw `PointerPressed` handler to `_headerText` which calls `topLevel.StorageProvider.OpenFolderPickerAsync(...)` without checking a busy/picking flag.  
 - Ensure both `FileTreeView` header click and `MainWindowViewModel.OpenFolderCommand` (Ctrl+O) use an `isPicking` flag or `ReactiveCommand` execution lock to prevent parallel folder pickers.  
+
+---
+
+### F16 — Commit message input box height is fixed to single-line 32px
+
+- [ ] Not fixed — Catalogued (2026-08-06)
+
+**Severity:** Cosmetic (UX readability/usability)  
+**Difficulty:** XS  
+**Area:** Source Control panel (`SourceControlPanel.cs`)  
+**Source:** User report (multiline commits work properly, but input box height does not expand visually)
+
+**Observed behavior:**  
+- `SourceControlPanel.cs` initializes `_commitInput` as a `TextBox` with `AcceptsReturn = false` and fixed `Height = 32`.  
+- Users typing or pasting multi-line commit messages only see a single 32px line height, making multi-line message editing/reading difficult.  
+
+**Expected behavior:**  
+- The commit message input box should expand its height (or support multiline editing with flexible/min height and `AcceptsReturn = true` / `TextWrapping = TextWrapping.Wrap`) so multi-line commit messages are easily readable and editable.  
+
+**Notes for implementers:**  
+- In `SourceControlPanel.cs`, update `_commitInput` instantiation: set `AcceptsReturn = true`, `TextWrapping = TextWrapping.Wrap`, change fixed `Height = 32` to `MinHeight = 32` (or `MinHeight = 32`, `MaxHeight = ...`) or dynamic expansion.  
 
 ---
 
