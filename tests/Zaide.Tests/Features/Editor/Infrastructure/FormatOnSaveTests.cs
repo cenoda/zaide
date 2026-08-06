@@ -267,16 +267,16 @@ public sealed class FormatOnSaveTests : IDisposable
     }
 
     [Fact]
-    public void SettingsDefaults_SchemaV3_FormatOnSaveFalse()
+    public void SettingsDefaults_SchemaV4_FormatOnSaveFalse()
     {
-        Assert.Equal(3, SettingsModel.Defaults.SchemaVersion);
+        Assert.Equal(4, SettingsModel.Defaults.SchemaVersion);
         Assert.False(SettingsModel.Defaults.Editor.FormatOnSave);
         Assert.False(EditorSettings.Default.FormatOnSave);
         Assert.Empty(SettingsModel.Defaults.Debug.BreakpointsByWorkspaceRoot);
     }
 
     [Fact]
-    public void Serializer_V3RoundTrip_IncludesFormatOnSave()
+    public void Serializer_V4RoundTrip_IncludesFormatOnSave()
     {
         var model = SettingsModel.Defaults with
         {
@@ -288,7 +288,7 @@ public sealed class FormatOnSaveTests : IDisposable
         var parsed = SettingsSerializer.Deserialize(json, out var rejected);
         Assert.False(rejected);
         Assert.NotNull(parsed);
-        Assert.Equal(3, parsed!.SchemaVersion);
+        Assert.Equal(4, parsed!.SchemaVersion);
         Assert.True(parsed.Editor.FormatOnSave);
     }
 
@@ -297,7 +297,7 @@ public sealed class FormatOnSaveTests : IDisposable
     {
         var json = """
             {
-              "schemaVersion": 4,
+              "schemaVersion": 5,
               "editor": {
                 "codeFontFamily": "x",
                 "codeFontSize": 14,
@@ -329,7 +329,7 @@ public sealed class FormatOnSaveTests : IDisposable
     }
 
     [Fact]
-    public void Serializer_V3RoundTrip_IncludesDebugBreakpoints()
+    public void Serializer_V4RoundTrip_IncludesDebugBreakpoints()
     {
         var workspaceRoot = Path.GetFullPath(Path.Combine(TempRoot, "ws"));
         var sourcePath = Path.GetFullPath(Path.Combine(workspaceRoot, "Program.cs"));
@@ -351,7 +351,7 @@ public sealed class FormatOnSaveTests : IDisposable
         var parsed = SettingsSerializer.Deserialize(json, out var rejected);
         Assert.False(rejected);
         Assert.NotNull(parsed);
-        Assert.Equal(3, parsed!.SchemaVersion);
+        Assert.Equal(4, parsed!.SchemaVersion);
         Assert.True(parsed.Debug.BreakpointsByWorkspaceRoot.ContainsKey(workspaceRoot));
         Assert.Equal(2, parsed.Debug.BreakpointsByWorkspaceRoot[workspaceRoot].Count);
         Assert.Equal(8, parsed.Debug.BreakpointsByWorkspaceRoot[workspaceRoot][0].Line);

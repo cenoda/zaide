@@ -62,7 +62,7 @@ public sealed class Phase22TransparencyFailureStateTests : IDisposable
 
         Assert.Equal(AgentMemorySurfaceState.Empty, management.MemoryInspection.SurfaceState);
         Assert.Equal(AgentUsageSurfaceState.Empty, management.UsageInspection.SurfaceState);
-        Assert.Contains("disabled", management.TraceStatusCaption, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Capture off", management.TraceStatusCaption, StringComparison.OrdinalIgnoreCase);
 
         authority.HasWorkspace = false;
         management.RefreshTracePresentation();

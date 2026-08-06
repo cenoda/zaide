@@ -808,18 +808,17 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         try
         {
-            var agents = _settingsService?.Current.Agents ?? AgentsSettings.Default;
-            var args = string.IsNullOrWhiteSpace(agents.AcpArguments)
+            var args = string.IsNullOrWhiteSpace(AcpArgumentsDraft)
                 ? Array.Empty<string>()
-                : agents.AcpArguments.Split(
+                : AcpArgumentsDraft.Split(
                     ' ',
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var runtime = new AcpRuntimeIdentity(agents.AcpExecutablePath.Trim(), args);
+            var runtime = new AcpRuntimeIdentity(AcpExecutableDraft.Trim(), args);
             _ = _backendBindingPresenter.TryBindAcpRuntime(
                 actorId,
                 runtime,
-                agents.AcpExpectedAgentName.Trim(),
-                agents.AcpExpectedAgentVersion.Trim());
+                AcpExpectedNameDraft.Trim(),
+                AcpExpectedVersionDraft.Trim());
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {

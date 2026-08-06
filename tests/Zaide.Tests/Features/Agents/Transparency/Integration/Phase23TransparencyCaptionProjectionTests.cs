@@ -54,7 +54,7 @@ public sealed class Phase23TransparencyCaptionProjectionTests : IDisposable
             trace.SetViewModel(management);
 
             var statusText = trace.StatusCaptionControl.Text ?? string.Empty;
-            Assert.Contains("disabled", statusText, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Capture off", statusText, StringComparison.OrdinalIgnoreCase);
             Assert.False(trace.SummaryCaptionControl.IsVisible);
         }
         finally
