@@ -112,10 +112,9 @@ public sealed class Phase23EmptyInspectChromeTests : IDisposable
     }
 
     [Fact]
-    public void TracePanel_CaptureDisabled_ShowsStatusCloseAndOpenSettingsOnly()
+    public async Task TracePanel_CaptureDisabled_ShowsStatusCloseAndOpenSettingsOnly()
     {
-        Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>())
-            .GetAwaiter().GetResult();
+        await Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>());
 
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         management.OpenTraceCommand.Execute().Subscribe();

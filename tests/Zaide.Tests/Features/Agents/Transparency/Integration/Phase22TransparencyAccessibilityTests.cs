@@ -79,10 +79,9 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
     }
 
     [Fact]
-    public void LivePanels_ExposeNamedControlsFocusAndScreenReaderValueText()
+    public async Task LivePanels_ExposeNamedControlsFocusAndScreenReaderValueText()
     {
-        Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>())
-            .GetAwaiter().GetResult();
+        await Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>());
 
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         management.OpenTraceCommand.Execute().Subscribe();
@@ -128,10 +127,9 @@ public sealed class Phase22TransparencyAccessibilityTests : IDisposable
     }
 
     [Fact]
-    public void Management_BoundedPaging_IsClampedAgainstLiveDefaults()
+    public async Task Management_BoundedPaging_IsClampedAgainstLiveDefaults()
     {
-        Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>())
-            .GetAwaiter().GetResult();
+        await Phase23SettingsTestSupport.DisableTraceCaptureAsync(_provider.GetRequiredService<ISettingsService>());
 
         var management = _provider.GetRequiredService<AgentTransparencyManagementViewModel>();
         var townhall = _provider.GetRequiredService<TownhallViewModel>();
