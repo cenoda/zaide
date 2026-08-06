@@ -26,7 +26,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
     private readonly TextBlock _selectionCaption;
     private readonly ComboBox _recordSelector;
     private bool _suppressRecordSelection;
-    private readonly Button _captureButton;
     private readonly Button _refreshButton;
     private readonly Button _retryButton;
     private readonly Button _openSettingsButton;
@@ -79,8 +78,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
             ApplyProjection();
         };
 
-        _captureButton = CreateButton("Enable capture", "Enable or disable usage capture");
-        _captureButton.Click += async (_, _) => await ToggleCaptureAsync();
         _refreshButton = CreateButton("Refresh", "Refresh usage evidence");
         _refreshButton.Click += async (_, _) => await RefreshAsync();
         _retryButton = CreateButton("Retry", "Retry failed usage load");
@@ -94,7 +91,7 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
-            Children = { _captureButton, _refreshButton, _retryButton, _openSettingsButton, _closeButton },
+            Children = { _refreshButton, _retryButton, _openSettingsButton, _closeButton },
         };
 
         var body = new StackPanel
@@ -143,8 +140,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         _ = RefreshAsync();
     }
 
-    public Button CaptureButton => _captureButton;
-
     public Button RefreshButton => _refreshButton;
 
     public Button RetryButton => _retryButton;
@@ -166,17 +161,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel = null;
         }
-    }
-
-    private async Task ToggleCaptureAsync()
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        _viewModel.ToggleUsageCaptureCommand.Execute().Subscribe();
-        await RefreshAsync();
     }
 
     private async Task RefreshAsync()
@@ -268,9 +252,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
             or AgentUsageSurfaceState.Failed
             or AgentUsageSurfaceState.Unavailable;
         SetActionsEnabled(enabled: enabled, canRetry: inspection.CanRetry);
-
-        _captureButton.Content = TextStyles.Caption(
-            captureEnabled ? "Disable capture" : "Enable capture");
     }
 
     private void ApplyChromeVisibility(bool minimalEmpty, bool captureEnabled)
@@ -281,7 +262,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
         SetInteractiveVisible(_recordSelector, full);
         SetVisible(_recordsCaption, full);
         SetVisible(_selectionCaption, full);
-        SetInteractiveVisible(_captureButton, full);
         SetInteractiveVisible(_refreshButton, true);
         SetInteractiveVisible(_retryButton, full);
         SetInteractiveVisible(_openSettingsButton, minimalCaptureOff);
@@ -317,11 +297,6 @@ internal sealed class AgentUsagePanel : Panel, IDisposable
 
     private void SetActionsEnabled(bool enabled, bool canRetry)
     {
-        if (_captureButton.IsVisible)
-        {
-            _captureButton.IsEnabled = _viewModel is not null;
-        }
-
         _refreshButton.IsEnabled = _viewModel is not null && enabled;
         if (_retryButton.IsVisible)
         {

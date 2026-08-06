@@ -27,7 +27,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
     private readonly TextBlock _pagingCaption;
     private readonly ComboBox _recordSelector;
     private bool _suppressRecordSelection;
-    private readonly Button _captureButton;
     private readonly Button _refreshButton;
     private readonly Button _openSettingsButton;
     private readonly Button _closeButton;
@@ -54,8 +53,7 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         _selectionCaption.TextWrapping = TextWrapping.Wrap;
         AutomationProperties.SetName(_selectionCaption, "Selected trace record");
 
-        _pagingCaption = TextStyles.Caption(
-            $"Page size {AgentTransparencyManagementViewModel.DefaultPageSize} (max {AgentTransparencyManagementViewModel.MaxPageSize}).");
+        _pagingCaption = TextStyles.Caption("Trace paging uses the page size configured in Settings.");
         _pagingCaption.Foreground = Brushes.Gray;
         AutomationProperties.SetName(_pagingCaption, "Trace bounded paging");
 
@@ -86,8 +84,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
             ApplyProjection();
         };
 
-        _captureButton = CreateButton("Enable capture", "Enable or disable trace capture");
-        _captureButton.Click += async (_, _) => await ToggleCaptureAsync();
         _refreshButton = CreateButton("Refresh", "Refresh trace evidence");
         _refreshButton.Click += async (_, _) => await RefreshAsync();
         _openSettingsButton = CreateButton("Open Settings", "Open application settings");
@@ -99,7 +95,7 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         {
             Orientation = Orientation.Horizontal,
             Spacing = LayoutTokens.SpacingSm,
-            Children = { _captureButton, _refreshButton, _openSettingsButton, _closeButton },
+            Children = { _refreshButton, _openSettingsButton, _closeButton },
         };
 
         var body = new StackPanel
@@ -150,8 +146,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         _ = RefreshAsync();
     }
 
-    public Button CaptureButton => _captureButton;
-
     public Button RefreshButton => _refreshButton;
 
     public Button OpenSettingsButton => _openSettingsButton;
@@ -175,17 +169,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel = null;
         }
-    }
-
-    private async Task ToggleCaptureAsync()
-    {
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        _viewModel.ToggleTraceCaptureCommand.Execute().Subscribe();
-        await RefreshAsync();
     }
 
     private async Task RefreshAsync()
@@ -267,8 +250,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
 
         ApplyChromeVisibility(chromeMode);
         SetActionsEnabled(enabled: _viewModel is not null);
-        var enabledCapture = captureEnabled;
-        _captureButton.Content = TextStyles.Caption(enabledCapture ? "Disable capture" : "Enable capture");
     }
 
     private static TraceChromeMode ResolveChromeMode(
@@ -299,7 +280,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
         SetVisible(_recordsCaption, full);
         SetVisible(_selectionCaption, full);
         SetVisible(_pagingCaption, full);
-        SetInteractiveVisible(_captureButton, full);
         SetInteractiveVisible(_refreshButton, full || minimalEmpty);
         SetInteractiveVisible(_openSettingsButton, minimalCaptureOff);
         SetInteractiveVisible(_closeButton, true);
@@ -335,11 +315,6 @@ internal sealed class AgentTracePanel : Panel, IDisposable
 
     private void SetActionsEnabled(bool enabled)
     {
-        if (_captureButton.IsVisible)
-        {
-            _captureButton.IsEnabled = enabled;
-        }
-
         if (_refreshButton.IsVisible)
         {
             _refreshButton.IsEnabled = enabled;

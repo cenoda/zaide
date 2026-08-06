@@ -79,7 +79,6 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
 
         OpenTraceCommand = ReactiveCommand.Create(OpenTraceSurface);
         CloseTraceCommand = ReactiveCommand.Create(CloseTraceSurface);
-        ToggleTraceCaptureCommand = ReactiveCommand.Create(ToggleTraceCapture);
         OpenMemoryCommand = ReactiveCommand.CreateFromTask(OpenMemorySurfaceAsync);
         CloseMemoryCommand = ReactiveCommand.Create(CloseMemorySurface);
         RefreshMemoryCommand = ReactiveCommand.CreateFromTask(RefreshMemorySurfaceAsync);
@@ -88,7 +87,6 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         CloseUsageCommand = ReactiveCommand.Create(CloseUsageSurface);
         RefreshUsageCommand = ReactiveCommand.CreateFromTask(RefreshUsageSurfaceAsync);
         RetryUsageCommand = ReactiveCommand.CreateFromTask(RetryUsageSurfaceAsync);
-        ToggleUsageCaptureCommand = ReactiveCommand.Create(ToggleUsageCapture);
 
         ToggleTraceCommand = ReactiveCommand.Create(ToggleTraceSurface);
         ToggleMemoryCommand = ReactiveCommand.CreateFromTask(ToggleMemorySurfaceAsync);
@@ -102,8 +100,6 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> OpenTraceCommand { get; }
 
     public ReactiveCommand<Unit, Unit> CloseTraceCommand { get; }
-
-    public ReactiveCommand<Unit, Unit> ToggleTraceCaptureCommand { get; }
 
     public ReactiveCommand<Unit, Unit> OpenMemoryCommand { get; }
 
@@ -120,8 +116,6 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> RefreshUsageCommand { get; }
 
     public ReactiveCommand<Unit, Unit> RetryUsageCommand { get; }
-
-    public ReactiveCommand<Unit, Unit> ToggleUsageCaptureCommand { get; }
 
     public ReactiveCommand<Unit, Unit> ToggleTraceCommand { get; }
 
@@ -378,20 +372,6 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         }
     }
 
-    private void ToggleTraceCapture()
-    {
-        if (_traceInspection.Availability.CaptureEnabled)
-        {
-            _traceInspection.DisableCapture();
-        }
-        else
-        {
-            _traceInspection.EnableCapture();
-        }
-
-        RefreshTracePresentation();
-    }
-
     private async Task OpenUsageSurfaceAsync()
     {
         // Inspect surfaces are mutually exclusive: opening one closes the others.
@@ -445,19 +425,5 @@ internal sealed class AgentTransparencyManagementViewModel : ReactiveObject
         _usageInspection.Refresh();
         UsageStatusCaption = _usageInspection.StatusCaption;
         this.RaisePropertyChanged(nameof(UsageInspection));
-    }
-
-    private void ToggleUsageCapture()
-    {
-        if (_usageInspection.Availability.CaptureEnabled)
-        {
-            _usageInspection.DisableCapture();
-        }
-        else
-        {
-            _usageInspection.EnableCapture();
-        }
-
-        PublishUsagePresentation();
     }
 }

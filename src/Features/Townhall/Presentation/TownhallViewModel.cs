@@ -18,6 +18,8 @@ using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Domain;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Infrastructure;
+using Zaide.Features.Settings.Contracts;
+using Zaide.Features.Settings.Domain;
 using Zaide.Features.Townhall.Domain;
 
 namespace Zaide.Features.Townhall.Presentation;
@@ -44,6 +46,8 @@ public class TownhallViewModel : ReactiveObject, IDisposable
     private readonly TownhallConversationUiState _conversationUiState;
     private readonly IConversationWorkspacePersistenceBridge? _persistenceBridge;
     private readonly AgentTransparencyManagementViewModel? _transparencyManagement;
+    private readonly ISettingsService? _settingsService;
+    private readonly IDisposable? _settingsSubscription;
     private readonly SerialDisposable _directBusySubscription = new();
     private readonly IDisposable? _sessionEventsSubscription;
     /// <summary>
@@ -578,9 +582,11 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         IAgentActorBackendSelectionService? backendSelectionService = null,
         AgentBackendBindingPresenter? backendBindingPresenter = null,
         IAgentSessionService? sessionService = null,
-        AgentTransparencyManagementViewModel? transparencyManagement = null)
+        AgentTransparencyManagementViewModel? transparencyManagement = null,
+        ISettingsService? settingsService = null)
     {
         _ = persistenceService;
+        _settingsService = settingsService;
         _state = state ?? throw new ArgumentNullException(nameof(state));
         _actorCatalog = actorCatalog ?? throw new ArgumentNullException(nameof(actorCatalog));
         _conversationStore = conversationStore ?? throw new ArgumentNullException(nameof(conversationStore));
@@ -609,6 +615,12 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         {
             // Refresh End Session availability on lifecycle transitions (admit, end, ready).
             _sessionEventsSubscription = _sessionService.Events.Subscribe(_ => RefreshCanEndSession());
+        }
+
+        if (_settingsService is not null)
+        {
+            SyncAcpDraftsFromSettings();
+            _settingsSubscription = _settingsService.WhenChanged.Subscribe(_ => SyncAcpDraftsFromSettings());
         }
 
         _conversationStore.EntryAppended += OnConversationEntryAppended;
@@ -796,17 +808,18 @@ public class TownhallViewModel : ReactiveObject, IDisposable
 
         try
         {
-            var args = string.IsNullOrWhiteSpace(AcpArgumentsDraft)
+            var agents = _settingsService?.Current.Agents ?? AgentsSettings.Default;
+            var args = string.IsNullOrWhiteSpace(agents.AcpArguments)
                 ? Array.Empty<string>()
-                : AcpArgumentsDraft.Split(
+                : agents.AcpArguments.Split(
                     ' ',
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var runtime = new AcpRuntimeIdentity(AcpExecutableDraft.Trim(), args);
+            var runtime = new AcpRuntimeIdentity(agents.AcpExecutablePath.Trim(), args);
             _ = _backendBindingPresenter.TryBindAcpRuntime(
                 actorId,
                 runtime,
-                AcpExpectedNameDraft.Trim(),
-                AcpExpectedVersionDraft.Trim());
+                agents.AcpExpectedAgentName.Trim(),
+                agents.AcpExpectedAgentVersion.Trim());
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
@@ -1732,36 +1745,14 @@ public class TownhallViewModel : ReactiveObject, IDisposable
             CanLogoutAcp = projection.CanLogout;
             CanBindAcp = !projection.IsBound || projection.BackendId != AgentBackendIds.Acp;
             ShowAcpConfig = projection.ShowAcpConfig;
-            if (projection.IsBound && projection.BackendId == AgentBackendIds.Acp)
+            if (projection.IsBound && projection.BackendId == AgentBackendIds.Acp
+                && projection.AdvertisedAuthMethodIds.Count > 0
+                && string.IsNullOrWhiteSpace(AcpAuthMethodDraft))
             {
-                if (!string.IsNullOrEmpty(projection.AcpExecutablePath))
-                {
-                    AcpExecutableDraft = projection.AcpExecutablePath;
-                }
-
-                if (!string.IsNullOrEmpty(projection.AcpArgumentsCaption)
-                    && projection.AcpArgumentsCaption != "(no arguments)")
-                {
-                    AcpArgumentsDraft = projection.AcpArgumentsCaption;
-                }
-
-                if (!string.IsNullOrEmpty(projection.AcpExpectedAgentName))
-                {
-                    AcpExpectedNameDraft = projection.AcpExpectedAgentName!;
-                }
-
-                if (!string.IsNullOrEmpty(projection.AcpExpectedAgentVersion))
-                {
-                    AcpExpectedVersionDraft = projection.AcpExpectedAgentVersion!;
-                }
-
-                if (projection.AdvertisedAuthMethodIds.Count > 0
-                    && string.IsNullOrWhiteSpace(AcpAuthMethodDraft))
-                {
-                    AcpAuthMethodDraft = projection.AdvertisedAuthMethodIds[0];
-                }
+                AcpAuthMethodDraft = projection.AdvertisedAuthMethodIds[0];
             }
 
+            SyncAcpDraftsFromSettings();
             return;
         }
 
@@ -1780,6 +1771,16 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         CanLogoutAcp = false;
         CanBindAcp = !snapshot.IsBound || snapshot.BackendId != AgentBackendIds.Acp;
         ShowAcpConfig = !snapshot.IsBound || snapshot.BackendId == AgentBackendIds.Acp;
+        SyncAcpDraftsFromSettings();
+    }
+
+    private void SyncAcpDraftsFromSettings()
+    {
+        var agents = _settingsService?.Current.Agents ?? AgentsSettings.Default;
+        AcpExecutableDraft = agents.AcpExecutablePath;
+        AcpArgumentsDraft = agents.AcpArguments;
+        AcpExpectedNameDraft = agents.AcpExpectedAgentName;
+        AcpExpectedVersionDraft = agents.AcpExpectedAgentVersion;
     }
 
     private static string FormatAuthStateCaption(AgentAuthenticationConnectionState authState) =>
@@ -1984,6 +1985,7 @@ public class TownhallViewModel : ReactiveObject, IDisposable
         }
 
         _sessionEventsSubscription?.Dispose();
+        _settingsSubscription?.Dispose();
         _directBusySubscription.Dispose();
     }
 

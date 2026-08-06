@@ -42,7 +42,7 @@ internal sealed class AgentUsageAvailabilityState
     {
         if (!CaptureEnabled)
         {
-            return "Usage capture disabled.";
+            return "Capture off — change in Settings.";
         }
 
         var costPart = HasVerifiedTotalCost && TotalCostCurrency is not null

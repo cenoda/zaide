@@ -605,17 +605,9 @@ public class TownhallView : Panel, IDisposable
         };
         _backendBindingPanel.BindAcpRequested += (_, _) =>
         {
-            if (_viewModel is null)
-            {
-                return;
-            }
-
-            _viewModel.AcpExecutableDraft = _backendBindingPanel.AcpExecutablePath;
-            _viewModel.AcpArgumentsDraft = _backendBindingPanel.AcpArgumentsText;
-            _viewModel.AcpExpectedNameDraft = _backendBindingPanel.AcpExpectedAgentName;
-            _viewModel.AcpExpectedVersionDraft = _backendBindingPanel.AcpExpectedAgentVersion;
-            _viewModel.BindAcpCommand.Execute().Subscribe();
+            _viewModel?.BindAcpCommand.Execute().Subscribe();
         };
+        _backendBindingPanel.OpenSettingsRequested += (_, _) => OpenSettingsRequested?.Invoke();
         _backendBindingPanel.UnbindRequested += (_, _) =>
         {
             _viewModel?.UnbindBackendCommand.Execute().Subscribe();

@@ -19,10 +19,11 @@ public sealed class AgentBackendBindingPanel : Panel
     private readonly TextBlock _settingsCaption;
     private readonly TextBlock _mutationErrorCaption;
     private readonly TextBlock _acpRuntimeCaption;
-    private readonly TextBox _acpExecutableInput;
-    private readonly TextBox _acpArgumentsInput;
-    private readonly TextBox _acpExpectedNameInput;
-    private readonly TextBox _acpExpectedVersionInput;
+    private readonly TextBlock _acpExecutableDisplay;
+    private readonly TextBlock _acpArgumentsDisplay;
+    private readonly TextBlock _acpExpectedNameDisplay;
+    private readonly TextBlock _acpExpectedVersionDisplay;
+    private readonly Button _openSettingsButton;
     private readonly Button _bindNativeButton;
     private readonly Button _bindAcpButton;
     private readonly Button _unbindButton;
@@ -47,6 +48,8 @@ public sealed class AgentBackendBindingPanel : Panel
     public event EventHandler? AuthenticateAcpRequested;
 
     public event EventHandler? LogoutRequested;
+
+    public event EventHandler? OpenSettingsRequested;
 
     public AgentBackendBindingPanel()
     {
@@ -81,10 +84,15 @@ public sealed class AgentBackendBindingPanel : Panel
         _acpRuntimeCaption.IsVisible = false;
         AutomationProperties.SetName(_acpRuntimeCaption, "ACP runtime identity");
 
-        _acpExecutableInput = CreateConfigInput("ACP executable path");
-        _acpArgumentsInput = CreateConfigInput("ACP non-secret arguments");
-        _acpExpectedNameInput = CreateConfigInput("ACP expected agent name");
-        _acpExpectedVersionInput = CreateConfigInput("ACP expected agent version");
+        _acpExecutableDisplay = CreateConfigDisplay("ACP executable path");
+        _acpArgumentsDisplay = CreateConfigDisplay("ACP non-secret arguments");
+        _acpExpectedNameDisplay = CreateConfigDisplay("ACP expected agent name");
+        _acpExpectedVersionDisplay = CreateConfigDisplay("ACP expected agent version");
+
+        _openSettingsButton = CreateActionButton(
+            "Open Settings",
+            "Open application settings to edit ACP configuration");
+        _openSettingsButton.Click += (_, _) => OpenSettingsRequested?.Invoke(this, EventArgs.Empty);
 
         _bindNativeButton = CreateActionButton(
             "Bind Native Harness",
@@ -147,10 +155,11 @@ public sealed class AgentBackendBindingPanel : Panel
             Spacing = LayoutTokens.SpacingXs,
             Children =
             {
-                _acpExecutableInput,
-                _acpArgumentsInput,
-                _acpExpectedNameInput,
-                _acpExpectedVersionInput,
+                _acpExecutableDisplay,
+                _acpArgumentsDisplay,
+                _acpExpectedNameDisplay,
+                _acpExpectedVersionDisplay,
+                _openSettingsButton,
             },
         };
 
@@ -290,27 +299,29 @@ public sealed class AgentBackendBindingPanel : Panel
 
     public string AcpExecutablePath
     {
-        get => _acpExecutableInput.Text ?? string.Empty;
-        set => _acpExecutableInput.Text = value;
+        get => ExtractDisplayValue(_acpExecutableDisplay.Text);
+        set => _acpExecutableDisplay.Text = FormatDisplayValue("ACP executable path", value);
     }
 
     public string AcpArgumentsText
     {
-        get => _acpArgumentsInput.Text ?? string.Empty;
-        set => _acpArgumentsInput.Text = value;
+        get => ExtractDisplayValue(_acpArgumentsDisplay.Text);
+        set => _acpArgumentsDisplay.Text = FormatDisplayValue("ACP non-secret arguments", value);
     }
 
     public string AcpExpectedAgentName
     {
-        get => _acpExpectedNameInput.Text ?? string.Empty;
-        set => _acpExpectedNameInput.Text = value;
+        get => ExtractDisplayValue(_acpExpectedNameDisplay.Text);
+        set => _acpExpectedNameDisplay.Text = FormatDisplayValue("ACP expected agent name", value);
     }
 
     public string AcpExpectedAgentVersion
     {
-        get => _acpExpectedVersionInput.Text ?? string.Empty;
-        set => _acpExpectedVersionInput.Text = value;
+        get => ExtractDisplayValue(_acpExpectedVersionDisplay.Text);
+        set => _acpExpectedVersionDisplay.Text = FormatDisplayValue("ACP expected agent version", value);
     }
+
+    public Button OpenSettingsButton => _openSettingsButton;
 
     /// <summary>
     /// Test/automation hooks for focusable action controls.
@@ -343,16 +354,31 @@ public sealed class AgentBackendBindingPanel : Panel
         return button;
     }
 
-    private static TextBox CreateConfigInput(string automationName)
+    private static TextBlock CreateConfigDisplay(string automationName)
     {
-        var input = new TextBox
+        var display = TextStyles.Caption(string.Empty);
+        display.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetName(display, automationName);
+        return display;
+    }
+
+    private static string FormatDisplayValue(string label, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? $"{label}: —" : $"{label}: {value.Trim()}";
+
+    private static string ExtractDisplayValue(string? displayText)
+    {
+        if (string.IsNullOrWhiteSpace(displayText))
         {
-            PlaceholderText = automationName,
-            MinWidth = 220,
-            Focusable = true,
-            IsTabStop = true,
-        };
-        AutomationProperties.SetName(input, automationName);
-        return input;
+            return string.Empty;
+        }
+
+        var separator = displayText.IndexOf(':');
+        if (separator < 0 || separator >= displayText.Length - 1)
+        {
+            return displayText.Trim();
+        }
+
+        var value = displayText[(separator + 1)..].Trim();
+        return value == "—" ? string.Empty : value;
     }
 }

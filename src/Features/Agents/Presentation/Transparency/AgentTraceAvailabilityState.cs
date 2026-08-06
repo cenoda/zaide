@@ -43,7 +43,7 @@ internal sealed class AgentTraceAvailabilityState
     public string FormatStatusCaption() =>
         CaptureEnabled
             ? $"Trace capture enabled: {TotalRecords} record(s), {TotalPayloadBytes} byte(s)."
-            : "Trace capture disabled.";
+            : "Capture off — change in Settings.";
 
     public static AgentTraceAvailabilityState Initial { get; } = new(
         captureEnabled: false,

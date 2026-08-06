@@ -6,6 +6,7 @@ using Zaide.Features.Agents.Presentation.Transparency;
 using Zaide.Features.Conversations.Application;
 using Zaide.Features.Conversations.Contracts;
 using Zaide.Features.Conversations.Infrastructure;
+using Zaide.Features.Settings.Contracts;
 using Zaide.Features.Townhall.Domain;
 using Zaide.Features.Townhall.Presentation;
 
@@ -43,7 +44,8 @@ internal static class TownhallServiceCollectionExtensions
                 (IAgentActorBackendSelectionService?)get(typeof(IAgentActorBackendSelectionService)),
                 (AgentBackendBindingPresenter?)get(typeof(AgentBackendBindingPresenter)),
                 (IAgentSessionService?)get(typeof(IAgentSessionService)),
-                (AgentTransparencyManagementViewModel?)get(typeof(AgentTransparencyManagementViewModel)));
+                (AgentTransparencyManagementViewModel?)get(typeof(AgentTransparencyManagementViewModel)),
+                (ISettingsService?)get(typeof(ISettingsService)));
         });
 
         return services;
