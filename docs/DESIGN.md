@@ -151,38 +151,35 @@ this.WhenActivated(d =>
 
 ---
 
-## 8. Visual Quality Baseline
+## 8. Color System (Refactor 10)
+
+- **Variant-aware token system:** Light and dark ramps with identical key sets.
+- **Default theme:** Light (no user-facing switcher yet; variant can only be changed from code).
+- **Token categories:** Surface (4 elevation tiers + glass), Border (translucent, 4 weights),
+  Text (3-level hierarchy + disabled), Accent (state derivatives), State (success/warning/danger/info/idle),
+  Interaction (hover/pressed/selected overlays), Elevation (shadow tokens), Typography (5-size scale).
+- **Usage:** All views use tokens via `DynamicResource` or `ThemeBinding` helper.
+  No hardcoded hex values in view code.
+- **Guard:** `scripts/check-theme-tokens.sh` enforces zero color literals in `src/**/*.cs`.
+- **Full token table:** See `docs/refactor/refactor-10/IMPLEMENTATION_PLAN.md §Token System`.
+- **Legacy palette:** Archived at `docs/refactor/refactor-10/archive/legacy-navy-palette.md` (historical record only).
+- **Accessibility:** Body text ≥ 4.5:1 contrast, secondary text and borders ≥ 3:1 (enforced by tests).
+
+---
+
+## 9. Visual Quality Baseline
 
 Zaide should feel as polished as VS Code or Warp at a glance:
 
 - **No flicker:** Layout stable on first paint. No cascade of elements appearing.
 - **Smooth resize:** No layout jumps or blank areas during window resize.
 - **Text rendering:** Crisp at all DPI. No blurry text on HiDPI.
-  - **Color palette:** Monochromatic dark base with blue accent system (matched to concept.png).
-    All views must use these tokens by resource key name via `DynamicResource`
-    or `Application.Current!.Resources[...]`. No hardcoded hex values in view code.
-    See `docs/refactor/refactor-3/IMPLEMENTATION_PLAN.md` M0.5 for per-component assignments.
-
-    | Token Key | Hex | Name | Usage |
-    |-----------|-----|------|-------|
-    | `PrimaryAccentBrush` | `#066ADB` | Bright Blue | Active tabs, primary buttons, focus rings, links, "Commit Staged" button |
-    | `SecondaryAccentBrush` | `#3ED3E4` | Cyan Teal | Code type highlights, secondary indicators, terminal status text |
-    | `WarningBrush` | `#FCBB47` | Amber | Warning badges, modified indicators (M), amber status dots |
-    | `SuccessBrush` | `#28A745` | Green | Added indicators (A), active status dots, sync indicators |
-    | `SurfaceBaseBrush` | `#0A0F19` | Near-Black Navy | Window background, nav bar background, deepest panel base |
-    | `SurfacePanelBrush` | `#0B121D` | Lighter Navy | Elevated panels (editor, terminal), code areas, input fields |
-    | `PanelDeepBrush` | `#0D1520` | Deep Panel | Bottom panel background, agent area |
-    | `TextPrimaryBrush` | `#E3E4F4` | Pale Ice Blue-White | All primary text: code content, names, labels |
-    | `TextSecondaryBrush` | `#8B95A5` | Muted Blue-Gray | Timestamps, line numbers, placeholder text, auxiliary labels |
-    | `SeparatorBrush` | `#070C16` | Darkest | 1px panel separators, grid lines |
-    | `IdleBrush` | `#5A6070` | Muted Slate | Idle status dots, disabled/inactive elements |
-    | `BusyBrush` | `#FCBB47` | Amber | Busy status dots (same as WarningBrush for visual consistency) |
 - **Separator style:** Space or 1px semi-transparent line — never 2px+ solid borders.
 - **Focus states:** Clear but subtle — slight brightness shift, not thick outline.
 
 ---
 
-## 8. Verification Checklist
+## 10. Verification Checklist
 
 Before marking any UI task complete:
 
@@ -198,4 +195,4 @@ Before marking any UI task complete:
 
 ---
 
-*Last updated: 2025-06-25*
+*Last updated: 2026-08-06*
