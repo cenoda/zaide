@@ -55,38 +55,15 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             Children = { title }
         };
 
-        var refreshButton = new Button
-        {
-            Content = IconFactory.Create(
+        var refreshButton = AppButton.Icon(
+            IconFactory.Create(
                 "Icon.ArrowClockwise",
                 (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
-                16),
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Padding = LayoutTokens.NoneThickness,
-            CornerRadius = LayoutTokens.RadiusSm,
-            Width = 24,
-            Height = 24,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Center,
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
-        };
+                16));
         ToolTip.SetTip(refreshButton, "Refresh source control");
         AutomationProperties.SetName(refreshButton, "Refresh source control");
 
-        var header = new Grid
-        {
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingLg, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
-            ColumnDefinitions =
-            {
-                new ColumnDefinition { Width = GridLength.Auto },
-                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                new ColumnDefinition { Width = GridLength.Auto }
-            },
-            Children = { titleGroup, refreshButton }
-        };
-        Grid.SetColumn(titleGroup, 0);
-        Grid.SetColumn(refreshButton, 2);
+        var header = PanelChrome.SectionHeader(titleGroup, refreshButton);
 
         // --- Branch Selector ---
         _branchSelector = new ComboBox
@@ -103,20 +80,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _unstagedHeader = TextStyles.Caption("Unstaged Changes");
         _unstagedHeader.VerticalAlignment = VerticalAlignment.Center;
 
-        _stageAllButton = new Button
-        {
-            Content = "Stage All",
-            FontSize = 11,
-            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            Background = Brushes.Transparent,
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
-            BorderThickness = LayoutTokens.NoneThickness,
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            // Bound to UnstagedCount > 0 on activation; hidden until then.
-            IsVisible = false
-        };
+        _stageAllButton = AppButton.Secondary("Stage All");
+        _stageAllButton.IsVisible = false;
 
         var unstagedHeaderRow = new Grid
         {
@@ -155,20 +120,8 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _stagedHeader = TextStyles.Caption("Staged Changes");
         _stagedHeader.VerticalAlignment = VerticalAlignment.Center;
 
-        _unstageAllButton = new Button
-        {
-            Content = "Unstage All",
-            FontSize = 11,
-            Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs, LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            Background = Brushes.Transparent,
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
-            BorderThickness = LayoutTokens.NoneThickness,
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            // Bound to StagedCount > 0 on activation; hidden until then.
-            IsVisible = false
-        };
+        _unstageAllButton = AppButton.Secondary("Unstage All");
+        _unstageAllButton.IsVisible = false;
 
         var stagedHeaderRow = new Grid
         {
@@ -195,32 +148,16 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         _stagedList.ItemTemplate = CreateChangeItemTemplate(isStaged: true);
 
         // --- Commit Input ---
-        _commitInput = new TextBox
-        {
-            PlaceholderText = "Commit message...",
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
-            MinHeight = 32,
-            MaxHeight = 120,
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs),
-            Background = ThemeBinding.GetBrush("SurfaceRaised1Brush"),
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
-            BorderThickness = LayoutTokens.NoneThickness,
-            FontSize = 13
-        };
+        _commitInput = AppTextBox.Input(
+            placeholder: "Commit message...",
+            acceptsReturn: true,
+            minHeight: 32,
+            maxHeight: 120);
+        _commitInput.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm, LayoutTokens.SpacingMd, LayoutTokens.SpacingXs);
 
         // --- Primary Action Button (Commit or Push) ---
-        _commitButton = new Button
-        {
-            Content = "Commit",
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingLg),
-            Height = 30,
-            Background = (IBrush?)Avalonia.Application.Current!.Resources["PrimaryAccentBrush"],
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
-            FontSize = 13,
-            Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
-        };
+        _commitButton = AppButton.Primary("Commit");
+        _commitButton.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, LayoutTokens.SpacingXs, LayoutTokens.SpacingMd, LayoutTokens.SpacingLg);
 
         // --- Primary action feedback (errors or brief success notice) ---
         _commitErrorText = new TextBlock

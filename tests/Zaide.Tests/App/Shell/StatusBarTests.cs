@@ -35,10 +35,10 @@ public sealed class StatusBarTests
         Assert.Contains("BuildStatusSegment(\"Icon.GitBranch\"", source, StringComparison.Ordinal);
 
         // Settings remains the only interactive control with a real command.
-        Assert.Contains("BuildSettingsButton(", source, StringComparison.Ordinal);
+        Assert.Contains("AppButton.Ghost(", source, StringComparison.Ordinal);
         Assert.Contains("OpenSettingsCommand", source, StringComparison.Ordinal);
-        Assert.Contains("SetName(button, \"Settings\")", source, StringComparison.Ordinal);
-        Assert.Contains("ToolTip.SetTip(button, \"Settings\")", source, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.SetName(_settingsButton, \"Settings\")", source, StringComparison.Ordinal);
+        Assert.Contains("ToolTip.SetTip(_settingsButton, \"Settings\")", source, StringComparison.Ordinal);
 
         // Display segments must not be Buttons with Hand cursor.
         Assert.Contains("private static Control BuildStatusSegment(", source, StringComparison.Ordinal);

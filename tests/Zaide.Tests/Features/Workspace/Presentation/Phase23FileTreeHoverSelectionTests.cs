@@ -5,40 +5,34 @@ using Xunit;
 namespace Zaide.Tests.Features.Workspace.Presentation;
 
 /// <summary>
-/// Phase 23 F9: file tree hover/selection decoration must track the pointer
-/// without sticky multi-row highlights.
+/// Phase 23 F9 / Refactor 10 M4c: file tree row hover uses the shared
+/// <see cref="Zaide.UI.DesignSystem.ListRow"/> interactive surface; selection
+/// paint (active strip, parent folder) remains explicit.
 /// </summary>
 public sealed class Phase23FileTreeHoverSelectionTests
 {
     [Fact]
-    public void FileTreeView_SourceUsesInstantHoverWithoutAnimationTail()
+    public void FileTreeView_SourceUsesSharedListRowWithoutManualHoverHandlers()
     {
         var source = ReadRepoFile("src/Features/Workspace/Presentation/FileTreeView.cs");
 
         Assert.DoesNotContain("Animations.RunAsync", source, StringComparison.Ordinal);
         Assert.DoesNotContain("HoverBackground", source, StringComparison.Ordinal);
-        Assert.Contains("_hoveredRow", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("PointerEntered", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("PointerExited", source, StringComparison.Ordinal);
+        Assert.Contains("ListRow.Create", source, StringComparison.Ordinal);
         Assert.Contains("RepaintAllFileTreeRows", source, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void FileTreeView_PointerEntered_ClearsPreviousRowBeforeNewHover()
+    public void FileTreeView_PaintRowForSelection_PreservesActiveStripAndParentFolderLogic()
     {
         var source = ReadRepoFile("src/Features/Workspace/Presentation/FileTreeView.cs");
 
-        Assert.Contains("var previous = _hoveredRow", source, StringComparison.Ordinal);
-        Assert.Contains("_hoveredRow = rowBorder", source, StringComparison.Ordinal);
-        Assert.Contains("PaintRowForSelection(previous", source, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void FileTreeView_PointerExited_RestoresSelectionPaintForCurrentHoverRow()
-    {
-        var source = ReadRepoFile("src/Features/Workspace/Presentation/FileTreeView.cs");
-
-        Assert.Contains("if (!ReferenceEquals(_hoveredRow, rowBorder))", source, StringComparison.Ordinal);
-        Assert.Contains("_hoveredRow = null", source, StringComparison.Ordinal);
         Assert.Contains("PaintRowForSelection(rowBorder, activeStrip, node)", source, StringComparison.Ordinal);
+        Assert.Contains("activeStrip.Background = activeBrush", source, StringComparison.Ordinal);
+        Assert.Contains("row.Background = activeBgBrush", source, StringComparison.Ordinal);
+        Assert.Contains("row.Background = parentFolderBgBrush", source, StringComparison.Ordinal);
     }
 
     [Fact]

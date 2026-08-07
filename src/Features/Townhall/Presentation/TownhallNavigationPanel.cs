@@ -24,7 +24,6 @@ namespace Zaide.Features.Townhall.Presentation;
 internal sealed class TownhallNavigationPanel : Panel
 {
     private Color? _activeRowOverlay;
-    private Color? _hoverOverlay;
 
     private Color ActiveRowOverlay
     {
@@ -37,15 +36,6 @@ internal sealed class TownhallNavigationPanel : Panel
             }
 
             return _activeRowOverlay.Value;
-        }
-    }
-
-    private Color HoverOverlay
-    {
-        get
-        {
-            _hoverOverlay ??= ThemeBinding.GetColor("OverlayHoverBrush");
-            return _hoverOverlay.Value;
         }
     }
 
@@ -308,43 +298,18 @@ internal sealed class TownhallNavigationPanel : Panel
 
     private Border CreateSelectableRow(Control content, bool isActive)
     {
-        var row = new Border
-        {
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
-            Child = content,
-            Cursor = new Cursor(StandardCursorType.Hand),
-            Focusable = true
-        };
+        var row = ListRow.Create(
+            content,
+            padding: LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs));
+        row.Cursor = new Cursor(StandardCursorType.Hand);
 
         ApplyRowActiveBackground(row, isActive);
-
-        row.PointerEntered += (_, _) =>
-        {
-            if (row.Background is null)
-            {
-                row.Background = new SolidColorBrush(HoverOverlay);
-                row.CornerRadius = LayoutTokens.RadiusSm;
-            }
-        };
-        row.PointerExited += (_, _) =>
-        {
-            // Restore active overlay if still selected; otherwise clear hover.
-            // Active state is reapplied via PropertyChanged; hover only when no background.
-            if (row.Background is SolidColorBrush brush
-                && brush.Color == HoverOverlay)
-            {
-                row.Background = null;
-                row.CornerRadius = LayoutTokens.NoneRadius;
-            }
-        };
-
         return row;
     }
 
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {
         _activeRowOverlay = null;
-        _hoverOverlay = null;
 
         var channelTemplate = _channelList.ItemTemplate;
         var directTemplate = _directList.ItemTemplate;

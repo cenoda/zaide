@@ -15,7 +15,7 @@ namespace Zaide.App.Shell;
 /// Far-left icon-only vertical nav bar (~40px) for switching between
 /// Explorer and Source Control left-panel modes.
 /// Active icon uses PrimaryAccentBrush; inactive uses TextSecondaryBrush.
-/// Hover uses <c>OverlayHoverBrush</c> (theme-aware interaction overlay).
+/// Hover uses <see cref="AppButton.IconSurface"/> interactive theme.
 /// </summary>
 public class NavBar : Panel, IDisposable
 {
@@ -27,8 +27,6 @@ public class NavBar : Panel, IDisposable
     private readonly Border _sourceControlActiveIndicator;
     private readonly Control _explorerIcon;
     private readonly Control _sourceControlIcon;
-    private readonly Border _explorerHoverOverlay;
-    private readonly Border _sourceControlHoverOverlay;
     private CompositeDisposable? _disposables;
 
     /// <summary>
@@ -85,62 +83,27 @@ public class NavBar : Panel, IDisposable
             (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             16);
 
-        // Hover overlay: 7% white, fills the icon button area
-        _explorerHoverOverlay = new Border
-        {
-            Background = ThemeBinding.GetBrush("OverlayHoverBrush"),
-            CornerRadius = LayoutTokens.RadiusMd,
-            IsVisible = false,
-            IsHitTestVisible = false,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-
-        _sourceControlHoverOverlay = new Border
-        {
-            Background = ThemeBinding.GetBrush("OverlayHoverBrush"),
-            CornerRadius = LayoutTokens.RadiusMd,
-            IsVisible = false,
-            IsHitTestVisible = false,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
-
-        // Explorer icon button
-        _explorerButton = CreateIconButton("Explorer");
         _explorerVisual = new Panel
         {
             Children =
             {
                 _explorerActiveIndicator,
-                _explorerIcon,
-                _explorerHoverOverlay
+                _explorerIcon
             }
         };
         _explorerVisual.RenderTransform = new TranslateTransform();
-        _explorerButton.Child = _explorerVisual;
+        _explorerButton = AppButton.IconSurface(_explorerVisual, tooltip: "Explorer");
 
-        // Source Control icon button
-        _sourceControlButton = CreateIconButton("Source Control");
         _sourceControlVisual = new Panel
         {
             Children =
             {
                 _sourceControlActiveIndicator,
-                _sourceControlIcon,
-                _sourceControlHoverOverlay
+                _sourceControlIcon
             }
         };
         _sourceControlVisual.RenderTransform = new TranslateTransform();
-        _sourceControlButton.Child = _sourceControlVisual;
-
-        // Hover enter/exit on explorer button
-        _explorerButton.PointerEntered += (_, _) => { _explorerHoverOverlay.IsVisible = true; };
-        _explorerButton.PointerExited += (_, _) => { _explorerHoverOverlay.IsVisible = false; };
-
-        // Hover enter/exit on source control button
-        _sourceControlButton.PointerEntered += (_, _) => { _sourceControlHoverOverlay.IsVisible = true; };
-        _sourceControlButton.PointerExited += (_, _) => { _sourceControlHoverOverlay.IsVisible = false; };
+        _sourceControlButton = AppButton.IconSurface(_sourceControlVisual, tooltip: "Source Control");
 
         // Layout: vertical stack of icons centered in the 40px column
         var iconStack = new StackPanel
@@ -237,20 +200,6 @@ public class NavBar : Panel, IDisposable
                 Animations.RunAsync(_explorerVisual, Animations.NavExit(HorizontalDirection.Left)),
                 Animations.RunAsync(_sourceControlVisual, Animations.NavEnter(HorizontalDirection.Right)));
         }
-    }
-
-    private static Border CreateIconButton(string tooltip)
-    {
-        var button = new Border
-        {
-            Width = 32,
-            Height = 32,
-            Background = Brushes.Transparent,
-            CornerRadius = LayoutTokens.RadiusMd,
-            Cursor = new Cursor(StandardCursorType.Hand)
-        };
-        ToolTip.SetTip(button, tooltip);
-        return button;
     }
 
     public void Dispose()

@@ -3,9 +3,9 @@
 ## Status
 
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
-Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is in progress; **M4a** done (2026-08-07); **M4b** done (2026-08-07).
+Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is in progress; **M4a** done (2026-08-07); **M4b** done (2026-08-07); **M4c** done (2026-08-07).
 
-**Next task: M4c** — panel hover unification (`SourceControlPanel`, `FileTreeView`, `Townhall*`, `BottomPanelHost`, `NavBar`, `StatusBar`).
+**Next task: M4d** — `Application.Current.Resources[]` indexer migration and full panel repaint on variant flip.
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -72,7 +72,8 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | M4 — shared control layer | in progress | full suite + interaction walkthrough |
 | M4a — ControlThemeCatalog + focus ring | done | catalog registration smoke tests + build |
 | M4b — AppButton/AppTextBox/ListRow/PanelChrome | done | factory unit tests |
-| M4c — hover unification (panels) | next | walkthrough |
+| M4c — hover unification (panels) | done | walkthrough |
+| M4d — Resources[] indexer + variant flip repaint | next | full suite |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
@@ -168,9 +169,36 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
 ## Next task
 
-**M4c** — replace per-panel hover wiring in `SourceControlPanel`, `FileTreeView`,
-`TownhallView` / `Townhall*`, `BottomPanelHost`, `NavBar`, and `StatusBar` with the
-M4b factories and `ControlThemeCatalog` interaction layer.
+**M4d** — migrate remaining `Application.Current.Resources[]` indexer call sites and
+integrate full panel repaint on theme variant flip.
+
+## M4c result (2026-08-07)
+
+Migrated listed panels off hand-wired hover/pressed overlay brushes to M4b factories
+and `ControlThemeCatalog` interactive surfaces.
+
+| File | Changes |
+|---|---|
+| `FileTreeView.cs` | `ListRow.Create` for tree rows; removed `_hoveredRow` + pointer hover handlers; selection/parent-folder paint preserved |
+| `TownhallNavigationPanel.cs` | `ListRow.Create` for channel/direct rows; removed pointer hover; active-row accent overlay preserved |
+| `TownhallPeoplePanel.cs` | `ListRow.Create` for agent rows; removed pointer hover |
+| `NavBar.cs` | `AppButton.IconSurface` replaces manual hover overlay borders + pointer handlers; `PointerPressed` retained for mode switch |
+| `StatusBar.cs` | `AppButton.Ghost` for settings; removed pointer hover/pressed background swapping; active `OverlaySelectedBrush` when settings open retained |
+| `BottomPanelHost.cs` | `AppButton.ToolbarLabel` for mode strip tabs |
+| `SourceControlPanel.cs` | `PanelChrome.SectionHeader`, `AppButton.Icon/Secondary/Primary`, `AppTextBox.Input` |
+
+**Not migrated:** `TownhallView.cs` (no hover/chrome to unify).
+
+**Residual pointer handlers (intentional):**
+
+| File | Handler | Reason |
+|---|---|---|
+| `NavBar.cs` | `PointerPressed` on icon surfaces | Mode switch commands (not hover chrome) |
+| `TownhallNavigationPanel.cs` | `PointerPressed` on rows | Selection/navigation |
+| `TownhallPeoplePanel.cs` | `PointerPressed` on openable agent rows | Open DM |
+| `FileTreeView.cs` | `PointerPressed` on header text | Pick folder |
+
+Build, design-system tests, panel source tests, and `check-theme-tokens.sh` verified at M4c close.
 
 ## M4b result (2026-08-07)
 

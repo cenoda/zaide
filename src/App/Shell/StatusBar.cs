@@ -35,22 +35,13 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private readonly TextBlock _settingsAppNameText;
     private IBrush? _settingsActiveBackground;
     private IBrush SettingsActiveBackground => _settingsActiveBackground ??= ThemeBinding.GetBrush("OverlaySelectedBrush");
-    private IBrush? _settingsHoverBackground;
-    private IBrush SettingsHoverBackground => _settingsHoverBackground ??= ThemeBinding.GetBrush("OverlayHoverBrush");
-    private IBrush? _settingsPressedBackground;
-    private IBrush SettingsPressedBackground => _settingsPressedBackground ??= ThemeBinding.GetBrush("OverlayPressedBrush");
     private bool _isSettingsButtonActive;
 
     public StatusBar()
     {
         Height = 24;
         Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
-        ActualThemeVariantChanged += (_, _) =>
-        {
-            _settingsActiveBackground = null;
-            _settingsHoverBackground = null;
-            _settingsPressedBackground = null;
-        };
+        ActualThemeVariantChanged += (_, _) => _settingsActiveBackground = null;
 
         _settingsIcon = IconFactory.Create(
             "Icon.Config",
@@ -70,13 +61,14 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         _modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
 
         // Settings is the only interactive segment (OpenSettingsCommand).
-        _settingsButton = BuildSettingsButton(new StackPanel
+        _settingsButton = AppButton.Ghost(new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Children = { _settingsIcon, _settingsAppNameText }
         });
-        WireSettingsButtonPointerFeedback(_settingsButton);
+        ToolTip.SetTip(_settingsButton, "Settings");
+        Avalonia.Automation.AutomationProperties.SetName(_settingsButton, "Settings");
 
         _languageIntelligenceText.Foreground =
             (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
@@ -183,23 +175,6 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             : Brushes.Transparent;
     }
 
-    private void WireSettingsButtonPointerFeedback(Button button)
-    {
-        button.PointerEntered += (_, _) =>
-        {
-            if (!button.IsPressed)
-            {
-                button.Background = SettingsHoverBackground;
-            }
-        };
-        button.PointerExited += (_, _) => UpdateSettingsButtonBackground();
-        button.PointerPressed += (_, _) => button.Background = SettingsPressedBackground;
-        button.PointerReleased += (_, _) =>
-            button.Background = button.IsPointerOver || _isSettingsButtonActive
-                ? SettingsHoverBackground
-                : Brushes.Transparent;
-    }
-
     /// <summary>
     /// Display-only status segment: icon + caption, no button chrome, cursor, or command.
     /// </summary>
@@ -222,27 +197,6 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
                 text
             }
         };
-    }
-
-    /// <summary>
-    /// Interactive Settings control only. Command is bound in <see cref="WhenActivated"/>.
-    /// </summary>
-    private static Button BuildSettingsButton(Control content)
-    {
-        var button = new Button
-        {
-            Content = content,
-            VerticalAlignment = VerticalAlignment.Center,
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
-            CornerRadius = LayoutTokens.RadiusSm,
-            Cursor = new Cursor(StandardCursorType.Hand)
-        };
-        // Accessible identity for the sole interactive status-bar control.
-        ToolTip.SetTip(button, "Settings");
-        Avalonia.Automation.AutomationProperties.SetName(button, "Settings");
-        return button;
     }
 
 }

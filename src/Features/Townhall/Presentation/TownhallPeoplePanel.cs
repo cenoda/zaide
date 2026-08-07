@@ -20,10 +20,6 @@ namespace Zaide.Features.Townhall.Presentation;
 /// </summary>
 public class TownhallPeoplePanel : Panel
 {
-    // M6: Hover overlay brush (faint white) shared with ChannelPanel.
-    private IBrush? _hoverOverlayCache;
-    private IBrush HoverOverlay => _hoverOverlayCache ??= ThemeBinding.GetBrush("OverlayHoverBrush");
-
     private readonly StackPanel _agentList;
     private Action<ActorId>? _onOpenDirectMessage;
 
@@ -68,8 +64,6 @@ public class TownhallPeoplePanel : Panel
 
         // Dock: header at top, scrollable list fills rest
         DockPanel.SetDock(header, Dock.Top);
-
-        ActualThemeVariantChanged += (_, _) => _hoverOverlayCache = null;
     }
 
     /// <summary>
@@ -161,12 +155,10 @@ public class TownhallPeoplePanel : Panel
             contentStack.Children.Add(warningIcon);
         }
 
-        var row = new Border
-        {
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm),
-            Child = contentStack,
-            Cursor = new Cursor(StandardCursorType.Hand)
-        };
+        var row = ListRow.Create(
+            contentStack,
+            padding: LayoutTokens.Symmetric(LayoutTokens.SpacingMd, LayoutTokens.SpacingSm));
+        row.Cursor = new Cursor(StandardCursorType.Hand);
 
         var openable = string.Equals(agent.Role, "agent", StringComparison.OrdinalIgnoreCase);
         AutomationProperties.SetName(
@@ -180,18 +172,6 @@ public class TownhallPeoplePanel : Panel
                 row,
                 "Opens or selects the Human↔Agent direct conversation in Townhall.");
         }
-
-        // Hover effect
-        row.PointerEntered += (_, _) =>
-        {
-            row.Background = HoverOverlay;
-            row.CornerRadius = LayoutTokens.RadiusSm;
-        };
-        row.PointerExited += (_, _) =>
-        {
-            row.Background = null;
-            row.CornerRadius = LayoutTokens.NoneRadius;
-        };
 
         if (openable)
         {

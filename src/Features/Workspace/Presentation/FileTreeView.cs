@@ -37,9 +37,6 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     private readonly Control _headerIcon;
     private readonly Button _closeFolderButton;
 
-    // F9: track hovered row so fast pointer motion clears the previous row.
-    private Border? _hoveredRow;
-
     public FileTreeView()
     {
         Padding = LayoutTokens.Uniform(LayoutTokens.SpacingLg);
@@ -108,16 +105,13 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         var activeBrush = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
         var activeBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
         var parentFolderBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
-        var defaultRowBrush = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
-        var hoverBrush = (IBrush?)Application.Current!.Resources["SurfaceRaisedBrush"];
-
         void PaintRowForSelection(Border row, Border activeStrip, FileTreeNode thisNode)
         {
             var selected = ViewModel?.SelectedFile;
             if (selected is null)
             {
                 activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-                row.Background = defaultRowBrush;
+                row.Background = Brushes.Transparent;
                 return;
             }
 
@@ -137,7 +131,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             }
 
             activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-            row.Background = defaultRowBrush;
+            row.Background = Brushes.Transparent;
         }
 
         // M3.2 / M3.3 / M3.4: Build the row visual: indent guides (M3.4),
@@ -224,43 +218,9 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                     rowGrid.Children.Add(indentStrip);
                     rowGrid.Children.Add(content);
 
-                    // M3.3: subtle parent-folder treatment — a slightly brighter
-                    // background on the folder that contains the active file.
-                    var rowBackground = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
-                    var rowBorder = new Border
-                    {
-                        Background = rowBackground,
-                        Padding = LayoutTokens.Inset(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs, LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-                        Child = rowGrid
-                    };
-                    // M3.3: tag the row so selection repaint can find it by
-                    // walking the visual tree. The Tag holds the FileTreeNode.
-                    rowBorder.Tag = node;
-
-                    // M3.2: instant hover (no animation); clear the previous row
-                    // before painting the new one so highlights never stick.
-                    rowBorder.PointerEntered += (_, _) =>
-                    {
-                        var previous = _hoveredRow;
-                        _hoveredRow = rowBorder;
-                        if (previous is not null && !ReferenceEquals(previous, rowBorder)
-                            && previous.Tag is FileTreeNode prevNode
-                            && previous.Child is Grid prevGrid
-                            && prevGrid.Children[0] is Border prevStrip)
-                        {
-                            PaintRowForSelection(previous, prevStrip, prevNode);
-                        }
-
-                        rowBorder.Background = hoverBrush ?? defaultRowBrush;
-                    };
-                    rowBorder.PointerExited += (_, _) =>
-                    {
-                        if (!ReferenceEquals(_hoveredRow, rowBorder))
-                            return;
-
-                        _hoveredRow = null;
-                        PaintRowForSelection(rowBorder, activeStrip, node);
-                    };
+                    // M4c: shared interactive surface for hover/pressed; selection
+                    // paint (active strip, parent folder) stays in PaintRowForSelection.
+                    var rowBorder = ListRow.Create(rowGrid, tag: node);
 
                     // M3.3 / M3.4: After the row is added to the visual tree,
                     // wire up the IsExpanded binding and the active-row paint.
@@ -519,8 +479,6 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         var activeBrush = (IBrush?)resources["PrimaryAccentBrush"];
         var activeBg = ThemeBinding.GetBrush("AccentSubtleBgBrush");
         var parentBg = ThemeBinding.GetBrush("AccentSubtleBgBrush");
-        var defaultBg = (IBrush?)resources["SurfaceBaseBrush"];
-
         var selected = ViewModel?.SelectedFile;
 
         foreach (var row in _treeView.GetVisualDescendants().OfType<Border>())
@@ -529,13 +487,10 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             if (row.Child is not Grid grid || grid.Children.Count < 3) continue;
             if (grid.Children[0] is not Border activeStrip) continue;
 
-            if (ReferenceEquals(_hoveredRow, row))
-                continue;
-
             if (selected is null)
             {
                 activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-                row.Background = defaultBg;
+                row.Background = Brushes.Transparent;
                 continue;
             }
 
@@ -555,7 +510,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             }
 
             activeStrip.Background = Avalonia.Media.Brushes.Transparent;
-            row.Background = defaultBg;
+            row.Background = Brushes.Transparent;
         }
     }
 

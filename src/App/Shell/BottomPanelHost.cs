@@ -260,20 +260,7 @@ internal sealed class BottomPanelHost
         bool fontSizeSm,
         Action onClick)
     {
-        var button = new Button
-        {
-            Content = label,
-            Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            Margin = margin,
-            Background = Brushes.Transparent,
-            BorderThickness = LayoutTokens.NoneThickness,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            Cursor = new Cursor(StandardCursorType.Hand),
-        };
-
-        if (fontSizeSm)
-            button.FontSize = TypographyTokens.FontSizeSm;
-
+        var button = AppButton.ToolbarLabel(label, margin, fontSizeSm);
         button.Click += (_, _) => onClick();
         return button;
     }
