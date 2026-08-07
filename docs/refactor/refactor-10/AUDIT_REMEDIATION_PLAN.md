@@ -3,15 +3,15 @@
 ## Status
 
 **In progress (2026-08-07).** Closes findings from the full commit audit of
-Refactor 10 M0–M3. This is **not** M4. Shared control layer work stays blocked
-until R1–R4 land (R5 is optional polish).
+Refactor 10 M0–M3. This is **not** M4. Shared control layer work may start
+after R1–R4 (R5 is optional polish).
 
 | ID | State |
 |---|---|
 | R1 | done — light `SurfaceOverlayBrush` is `#000000` @ 0.40 |
 | R2 | done — editor TextMate follows app variant (Light+/Dark+) |
 | R3 | done — guard enforces Parse/FromArgb/FromRgb literals; Makefile tracked (policy A) |
-| R4 | pending |
+| R4 | done — plan and TOFIX truth-synced with post-R3 live code |
 | R5 | optional / pending |
 
 ## Why this exists
@@ -21,12 +21,12 @@ completeness:
 
 | Claim in TOFIX / plan | Live truth (2026-08-07 audit) |
 |---|---|
-| M3 guard enforces zero color literals | Guard only greps `Color.Parse("#…")` |
-| Guard wired into Makefile / CI | `Makefile` is gitignored; no CI hook |
+| M3 guard enforces zero color literals | Guard flags Parse hex + literal FromArgb/FromRgb; allowlists Terminal + TextStyles + Elevation |
+| Guard wired into Makefile / CI | Makefile tracked (`make check-theme-tokens`); **CI does not invoke guard yet** |
 | Light default is shippable | ~~`SurfaceOverlayBrush` (light) white 40%~~ **fixed in R1** (`#000000` @ 40%) |
-| App is light-default | Editor TextMate still pins `DarkPlus` |
-| M1 exit: variant flip repaints every panel | One-shot `ThemeBinding` + ~95 `Resources[]` sites; no flip test |
-| IMPLEMENTATION_PLAN status | Still says **Planned**; M1 gate checkboxes unchecked |
+| App is light-default | ~~Editor TextMate pins `DarkPlus`~~ **fixed in R2** (Light+/Dark+ from variant) |
+| M1 exit: variant flip repaints every panel | One-shot `ThemeBinding` + ~90 `Resources[]` sites; **deferred to M4** |
+| IMPLEMENTATION_PLAN status | ~~Still says Planned; unchecked gates~~ **fixed in R4** |
 
 Full-suite repaint and hover unification remain **M4**. This plan only fixes
 bugs, honesty gaps, and guard/docs debt so M4 starts on solid ground.
@@ -50,19 +50,16 @@ bugs, honesty gaps, and guard/docs debt so M4 starts on solid ground.
   (document only; M4 owns structural fix)
 - Terminal ANSI palette literals (remain allowed)
 
-## Pre-Implementation Verification (live)
+## Pre-Implementation Verification (live, pre-R1 baseline)
 
-- [x] `src/UI/DesignSystem/Tokens/Light.axaml` — `SurfaceOverlayBrush` is
-      `Color="#FFFFFF" Opacity="0.60"`-style white translucent (scrim bug).
-- [x] `src/Features/Editor/Presentation/EditorView.cs` — `ThemeName.DarkPlus`
-      with comment “matches app dark theme”.
-- [x] `scripts/check-theme-tokens.sh` — only matches `Color.Parse` hex form;
-      excludes `TerminalRenderControl.cs` and `TextStyles.cs`.
-- [x] `.gitignore` line 75 ignores `Makefile`; on-disk Makefile has
-      `check-theme-tokens` but is not versioned.
-- [x] Residual production literals (approx.): `Color.Parse` 3, `FromArgb` 13,
-      `FromRgb` 20, `new Thickness(` 27; `Resources[]` indexer ~95.
-- [x] Design-system tests 32/32 pass; `dotnet build Zaide.slnx` clean.
+Historical audit snapshot before R1–R3 fixes (retained for traceability):
+
+- [x] ~~`Light.axaml` `SurfaceOverlayBrush` white translucent scrim~~ **R1 fixed**
+- [x] ~~`EditorView` pins `ThemeName.DarkPlus`~~ **R2 fixed**
+- [x] ~~Guard only matched `Color.Parse` hex; Makefile gitignored~~ **R3 fixed**
+- [x] Residual production literals (approx.): allowlisted ANSI/elevation/text
+      fallbacks; ~27 `new Thickness(`; `Resources[]` indexer ~90.
+- [x] Design-system tests pass; `dotnet build Zaide.slnx` clean.
 
 ## Milestones
 
@@ -324,9 +321,16 @@ agents will trust the board and skip real work.
 
 ### Exit
 
-- [ ] Plan and TOFIX agree with live code
-- [ ] No claim of zero color literals unless the R3 guard truly enforces it
-- [ ] Commit: `docs(refactor-10-r4): truth-sync plan and TOFIX after audit`
+- [x] Plan and TOFIX agree with live code
+- [x] No claim of zero color literals unless the R3 guard truly enforces it
+- [x] Commit: `docs(refactor-10-r4): truth-sync plan and TOFIX after audit`
+
+### Result (2026-08-07)
+
+`IMPLEMENTATION_PLAN.md` and `TOFIX.md` updated: M0–M3 + R1–R4 status; M1
+full-repaint and M3 zero-literal overclaims removed; guard scope (Parse +
+literal FromArgb/FromRgb, allowlisted paths), Makefile tracking, and missing CI
+hook documented. M4 unblocked; R5 optional next.
 
 ### Agent prompt (copy-paste)
 

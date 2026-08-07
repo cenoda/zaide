@@ -2,9 +2,11 @@
 
 ## Status
 
-**In progress (2026-08-07).** M0–M3 commits have landed. A post-M3 audit found
-visual and honesty gaps; close those via `AUDIT_REMEDIATION_PLAN.md` (R1–R4,
-optional R5) **before** starting M4.
+**In progress (2026-08-07).** M0–M3 are implemented. Post-M3 audit remediation
+**R1–R3** are done; **R4** (this pass) truth-syncs plan and TOFIX with live
+code. **R5** is optional polish, then **M4** (shared control layer).
+
+Remediation detail and per-step prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
 Supersedes the earlier placeholder content of this file, which described F8
 image preview and accessibility work. Those items are **not** part of
@@ -18,33 +20,38 @@ Refactor 10:
 
 ## Pre-Implementation Verification
 
-- [x] `src/App/Composition/App.axaml:5` pins `RequestedThemeVariant="Dark"`.
-- [x] `src/App/Composition/App.axaml:11-62` is a flat dictionary of `<Color>`
-      plus `<SolidColorBrush Color="{StaticResource ...}">`. There are zero
-      `ResourceDictionary.ThemeDictionaries`, zero `ThemeVariantScope`, and zero
-      `DynamicResource` usages in the repository.
-- [x] `src/UI/DesignSystem/PaletteTokens.cs` resolves brushes through
-      `Application.Current.Resources[...]` with hardcoded dark fallbacks, so a
-      variant change cannot propagate.
-- [x] `src/UI/DesignSystem/TypographyTokens.cs` exposes a single token
-      (`FontSizeSm` = 12); there is effectively no type scale.
-- [x] ~100+ hardcoded color literals live in `src/**/*.cs`. Top offenders:
-      `SettingsFontPicker.cs` (15), `SourceControlPanel.cs` (14),
-      `FileTreeView.cs` (12), `PaletteTokens.cs` (9 fallbacks),
-      `TownhallView.cs` (8), `CommandPaletteOverlay.cs` (8),
-      `AgentMemoryPanel.cs` (6), `AgentBackendBindingPanel.cs` (6),
-      `StatusBar.cs` (6), `BottomPanelHost.cs` (6).
-- [x] `static readonly` brush caches block runtime variant switching in
-      `BreakpointMargin.cs:21-27`, `InstructionPointerMargin.cs:14`,
-      `TerminalRenderControl.cs:186-195`,
-      `TownhallNavigationPanel.cs:25-26`.
-- [x] No central `ControlTheme` / `Styles` layer exists; hover and pressed
-      states are hand-wired per panel. Zero shadow or elevation usage.
-- [x] 38 raw `new Thickness(` calls exist despite `LayoutTokens`.
-- [ ] Avalonia `ThemeDictionaries` + code-built `ControlTheme` registration
-      proven on this Avalonia version (M1 entry gate).
-- [ ] `TransparencyLevelHint` blur actually applied on the dev compositor, or
-      the opaque fallback path proven (M5 entry gate).
+### M0 baseline (2026-08-06 entry gate — historical)
+
+Recorded at refactor open; superseded by M1–M3 work except where noted in
+residual-debt rows below.
+
+- [x] Flat dark-only `App.axaml` resource dictionary (no `ThemeDictionaries`).
+- [x] `PaletteTokens` / per-view `Application.Current.Resources[...]` one-shot
+      resolution blocked variant propagation.
+- [x] ~100+ hardcoded color literals and 38 raw `new Thickness(` calls.
+- [x] `static readonly` brush caches in margin/terminal/townhall controls.
+- [x] No central `ControlTheme` layer; hover hand-wired per panel.
+
+### Post-M3 / post-remediation reality (2026-08-07)
+
+- [x] `ThemeDictionaries` with `Light.axaml` / `Dark.axaml` / `Shared.axaml`;
+      `RequestedThemeVariant="Dark"` removed; light is the default.
+- [x] `ThemeBinding` helper; `PaletteTokens` fallbacks removed; instance brush
+      caches invalidate on `ActualThemeVariantChanged` (no `static readonly`
+      brush fields remain in `src`).
+- [x] Semantic token ramps, typography scale, `Elevation.cs`, contrast tests.
+- [x] Partial literal migration (16 files in M3); guard at
+      `scripts/check-theme-tokens.sh` enforces `Color.Parse("#…")` and
+      literal-channel `Color.FromArgb` / `Color.FromRgb` with path excludes
+      (`TerminalRenderControl.cs`, `TextStyles.cs`, `Elevation.cs`). Invoke via
+      `bash scripts/check-theme-tokens.sh` or `make check-theme-tokens`
+      (`Makefile` tracked as of R3). **CI does not invoke this guard yet.**
+- [x] R1: light `SurfaceOverlayBrush` is `#000000` @ 0.40 (dimming scrim).
+- [x] R2: editor TextMate uses `LightPlus` / `DarkPlus` from app variant.
+- [ ] **Deferred to M4:** full UI repaint on variant flip (one-shot
+      `ThemeBinding` + ~90 `Resources[]` indexer sites); mass hover unification.
+- [ ] `TransparencyLevelHint` blur on dev compositor, or opaque fallback proven
+      (M5 entry gate).
 
 ## Scope
 
@@ -122,9 +129,9 @@ docs/refactor/refactor-10/archive/legacy-navy-palette.md
 | Milestone | Description | Test |
 |---|---|---|
 | M0 | Entry gate: live audit recorded above, plan and archive documents written | docs review; `dotnet test Zaide.slnx --no-build` baseline |
-| M1 | Theme variant infrastructure: `ThemeDictionaries`, `ThemeBinding`, variant pin removed, static brush caches eliminated | key-parity test + forced runtime variant flip |
+| M1 | Theme variant infrastructure: `ThemeDictionaries`, `ThemeBinding`, variant pin removed, static brush caches eliminated | key-parity test; **full panel repaint on flip deferred to M4** |
 | M2 | Semantic tokens and both ramps authored, typography scale and elevation restored | contrast-ratio tests + `dotnet test Zaide.slnx --no-build` |
-| M3 | Hardcoded colors and raw Thickness values replaced, guard script wired in | `scripts/check-theme-tokens.sh` + screenshots per file group |
+| M3 | Partial literal migration; guard for Parse/FromArgb/FromRgb literals | `bash scripts/check-theme-tokens.sh` or `make check-theme-tokens` |
 | M4 | Shared control layer replaces per-panel hover code | full suite + hover/pressed/focus walkthrough |
 | M5 | Glass surfaces, elevation, radius and motion polish | main screens with and without blur + full suite |
 
@@ -151,8 +158,10 @@ agree with live code.
   `TownhallNavigationPanel` with instance caches invalidated on
   `ActualThemeVariantChanged`.
 
-**Exit:** light/dark key sets match; forcing the variant from code repaints
-every panel without a restart; zero `static readonly` brush fields remain.
+**Exit:** light/dark key sets match; zero `static readonly` brush fields remain.
+**Not in M1 scope (M4):** forcing the variant from code repaints every panel
+without a restart — one-shot `ThemeBinding` resolution and ~90
+`Resources[]` indexer call sites remain; no flip-repaint integration test yet.
 
 ### M2 — Semantic tokens and both ramps
 
@@ -170,11 +179,17 @@ asserted by tests.
 ### M3 — Literal replacement and guard
 
 - Migrate top offenders first, then the remaining files, in reviewable groups.
-- Align the 38 raw `new Thickness(` calls to the `LayoutTokens` scale.
+- Align many raw `new Thickness(` calls to the `LayoutTokens` scale (~27
+  `new Thickness(` remain in `src`; 1px border widths excluded).
 - Add `scripts/check-theme-tokens.sh` following the `check-animations.sh`
-  pattern, and wire it into the `Makefile` and CI verification path.
+  pattern; wire into the tracked `Makefile` (`make check-theme-tokens`).
+  **CI does not invoke the guard yet** (local/Makefile only).
 
-**Exit:** the guard reports zero violations in `src/**/*.cs`.
+**Exit:** guard passes on current tree for `Color.Parse("#…")` and
+literal-channel `Color.FromArgb` / `Color.FromRgb`, with documented path
+excludes (terminal ANSI, `TextStyles` / `Elevation` fallbacks). Does **not**
+claim zero color construction in `src` — residual `Colors.*`, computed alpha,
+and allowlisted paths remain (see `TOFIX.md` M3 result).
 
 ### M4 — Shared control layer
 
@@ -222,13 +237,20 @@ hover wiring remains in those files.
 
 ## Exit Conditions
 
-- [ ] `RequestedThemeVariant="Dark"` removed and light renders by default
-- [ ] Zero color literals in `src/**/*.cs` (tests excluded), guard-enforced
-- [ ] Zero `static readonly` brush fields
-- [ ] Contrast ≥ 4.5:1 body text, ≥ 3:1 secondary text and borders
-- [ ] `dotnet build Zaide.slnx` succeeds
-- [ ] `dotnet test Zaide.slnx --no-build` passes in full
-- [ ] No layout breakage at 800×600
+Refactor-wide gates (M4/M5 and optional R5 still open):
+
+- [x] `RequestedThemeVariant="Dark"` removed; light renders by default
+- [x] Guard enforces `Color.Parse` hex and literal-channel `FromArgb` /
+      `FromRgb` in `src/**/*.cs` (allowlisted paths excluded); **not** full
+      zero-literal coverage (`Colors.*`, Thickness, unguarded forms remain)
+- [x] Zero `static readonly` brush fields in `src`
+- [x] Contrast ≥ 4.5:1 body text, ≥ 3:1 secondary text and borders (tests)
+- [x] `dotnet build Zaide.slnx` succeeds (verified through M3/R3)
+- [ ] `dotnet test Zaide.slnx --no-build` passes in full (re-verify at M4 close)
+- [ ] No layout breakage at 800×600 (re-verify at M4/M5)
+- [ ] Full panel repaint on variant flip (M4)
+- [ ] Shared control layer / hover unification (M4)
+- [ ] Glass, elevation, motion polish (M5)
 
 ## Rollback Plan
 

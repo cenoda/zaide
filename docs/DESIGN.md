@@ -160,7 +160,10 @@ this.WhenActivated(d =>
   Interaction (hover/pressed/selected overlays), Elevation (shadow tokens), Typography (5-size scale).
 - **Usage:** All views use tokens via `DynamicResource` or `ThemeBinding` helper.
   No hardcoded hex values in view code.
-- **Guard:** `scripts/check-theme-tokens.sh` enforces zero color literals in `src/**/*.cs`.
+- **Guard:** `scripts/check-theme-tokens.sh` (or `make check-theme-tokens`)
+  flags `Color.Parse("#…")` and literal-channel `Color.FromArgb` / `FromRgb` in
+  `src/**/*.cs`, with path excludes for terminal ANSI and design-system
+  fallbacks. Does not cover all color construction (`Colors.*`, Thickness, etc.).
 - **Full token table:** See `docs/refactor/refactor-10/IMPLEMENTATION_PLAN.md §Token System`.
 - **Legacy palette:** Archived at `docs/refactor/refactor-10/archive/legacy-navy-palette.md` (historical record only).
 - **Accessibility:** Body text ≥ 4.5:1 contrast, secondary text and borders ≥ 3:1 (enforced by tests).

@@ -3,10 +3,11 @@
 ## Status
 
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
-A post-M3 commit audit (2026-08-07) found honesty and visual gaps; those are
-tracked as **R1–R5** in `AUDIT_REMEDIATION_PLAN.md` and must finish before M4.
+Post-M3 audit remediation **R1–R4** is complete (2026-08-07). **R5** is optional
+polish; **M4** (shared control layer) is the next required milestone.
 
-**Next task: R4** (docs truth-sync after audit remediation).
+**Next task: R5** (optional — indent guide token, ThemeBinding flip smoke test,
+stale comments) **or skip to M4** if R5 is deferred.
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -62,15 +63,15 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | Milestone | State | Gate |
 |---|---|---|
 | M0 — plan and archive | done | docs review |
-| M1 — theme variant infrastructure | done* | key-parity test; full panel repaint on flip deferred to M4 |
+| M1 — theme variant infrastructure | done* | key-parity test; full panel repaint on flip **deferred to M4** |
 | M2 — semantic tokens and both ramps | done | contrast-ratio tests + full suite |
-| M3 — literal replacement and guard | done* | partial literal migration; weak guard (see audit) |
-| R1 — light SurfaceOverlayBrush scrim | done | black 40% scrim; parity + build green |
+| M3 — literal replacement and guard | done* | partial migration; guard (Parse/FromArgb/FromRgb + allowlists) |
+| R1 — light SurfaceOverlayBrush scrim | done | `#000000` @ 40%; parity + build green |
 | R2 — editor TextMate vs app variant | done | Light+/Dark+ from variant; theme tests + build |
 | R3 — strengthen guard + Makefile policy | done | `bash scripts/check-theme-tokens.sh`; `make check-theme-tokens` |
-| R4 — docs truth-sync | pending | plan/TOFIX match live code |
+| R4 — docs truth-sync | done | plan/TOFIX match live code |
 | R5 — optional polish | pending | subset in AUDIT_REMEDIATION_PLAN |
-| M4 — shared control layer | blocked on R1–R4 | full suite + interaction walkthrough |
+| M4 — shared control layer | next (after optional R5) | full suite + interaction walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
@@ -129,7 +130,7 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 | R1 | Light `SurfaceOverlayBrush` dimming scrim | done — `#000000` @ 40% replaces white wash |
 | R2 | Editor TextMate theme follows app variant | done — Light+/Dark+; runtime `SetTheme` on variant change |
 | R3 | Stronger guard + Makefile git policy | done — Parse/FromArgb/FromRgb literals; Makefile policy A |
-| R4 | Truth-sync IMPLEMENTATION_PLAN + TOFIX | pending |
+| R4 | Truth-sync IMPLEMENTATION_PLAN + TOFIX | done — post-R3 reality; M1 flip repaint deferred to M4 |
 | R5 | Optional: indent guide token, flip smoke test, nits | pending |
 
 ## R3 result (2026-08-07)
@@ -146,8 +147,18 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 - No trivial production violations to fix; residual literal patterns outside the
   guard (e.g. `Colors.White`, `new Thickness(`) remain for M4.
 
+## R4 result (2026-08-07)
+
+- `IMPLEMENTATION_PLAN.md`: status reflects M0–M3 + R1–R4; exit gates checked
+  only when true; M1 full repaint and M3 zero-literal claims corrected; guard
+  scope and Makefile/CI notes added.
+- This board: R4 done; next task R5 (optional) or M4.
+- `AUDIT_REMEDIATION_PLAN.md`: R4 exit filled; status table R1–R4 done.
+
 ## Next task
 
-**R4** — truth-sync `IMPLEMENTATION_PLAN.md` and this board with post-audit
-reality (`AUDIT_REMEDIATION_PLAN.md`).
-After R4 (R5 optional): M4 shared control layer.
+**R5** (optional) — indent guide token, `ThemeBinding` variant smoke test, stale
+comments (`AUDIT_REMEDIATION_PLAN.md`). Skip if starting M4 immediately.
+
+**M4** — shared control layer (`ControlThemeCatalog`, `AppButton`, hover
+unification, `Resources[]` → live theme binding). Required after R1–R4.
