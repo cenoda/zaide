@@ -9,7 +9,8 @@ until R1–R4 land (R5 is optional polish).
 | ID | State |
 |---|---|
 | R1 | done — light `SurfaceOverlayBrush` is `#000000` @ 0.40 |
-| R2–R4 | pending |
+| R2 | done — editor TextMate follows app variant (Light+/Dark+) |
+| R3–R4 | pending |
 | R5 | optional / pending |
 
 ## Why this exists
@@ -165,10 +166,18 @@ highlighting stays dark-on-dark while chrome goes light.
 
 ### Exit
 
-- [ ] Fresh editor under light default does not force DarkPlus
-- [ ] Dark variant still gets a dark syntax theme
-- [ ] Focused editor/design tests green; build clean
-- [ ] Commit: `fix(refactor-10-r2): align editor TextMate theme with app variant`
+- [x] Fresh editor under light default does not force DarkPlus
+- [x] Dark variant still gets a dark syntax theme
+- [x] Focused editor/design tests green; build clean
+- [x] Commit: `fix(refactor-10-r2): align editor TextMate theme with app variant`
+
+### Result (2026-08-07)
+
+`EditorView` selects `ThemeName.LightPlus` or `ThemeName.DarkPlus` from
+`ThemeBinding.CurrentVariant` at init and re-applies via
+`TextMate.Installation.SetTheme` on `ActualThemeVariantChanged`.
+`GetTextMateThemeName` is unit-tested; syntax paint still needs manual
+visual check (headless tests do not render tokens).
 
 ### Agent prompt (copy-paste)
 

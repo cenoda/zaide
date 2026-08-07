@@ -6,7 +6,7 @@ M0 (plan and archive) through M3 (literal replacement and guard) are implemented
 A post-M3 commit audit (2026-08-07) found honesty and visual gaps; those are
 tracked as **R1–R5** in `AUDIT_REMEDIATION_PLAN.md` and must finish before M4.
 
-**Next task: R2** (editor TextMate theme vs app variant).
+**Next task: R3** (strengthen theme-token guard + Makefile policy).
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -66,7 +66,7 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | M2 — semantic tokens and both ramps | done | contrast-ratio tests + full suite |
 | M3 — literal replacement and guard | done* | partial literal migration; weak guard (see audit) |
 | R1 — light SurfaceOverlayBrush scrim | done | black 40% scrim; parity + build green |
-| R2 — editor TextMate vs app variant | pending | editor path + build |
+| R2 — editor TextMate vs app variant | done | Light+/Dark+ from variant; theme tests + build |
 | R3 — strengthen guard + Makefile policy | pending | `bash scripts/check-theme-tokens.sh` |
 | R4 — docs truth-sync | pending | plan/TOFIX match live code |
 | R5 — optional polish | pending | subset in AUDIT_REMEDIATION_PLAN |
@@ -113,8 +113,8 @@ See `AUDIT_REMEDIATION_PLAN.md` for prompts and exit conditions.
 - Residual production color construction still present (terminal ANSI,
   breakpoint RGB, elevation fallbacks, computed alpha overlays, TextStyles
   navy fallbacks).
-- Known mapping issues deferred to remediation: light `SurfaceOverlayBrush`
-  white wash; editor TextMate `DarkPlus` under light default.
+- Known mapping issues deferred to remediation: ~~editor TextMate `DarkPlus`
+  under light default~~ **fixed in R2** (Light+/Dark+ from app variant).
 - Build clean; design-system tests green at audit time.
 
 ## Audit remediation (2026-08-07)
@@ -124,12 +124,13 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 | ID | Item | State |
 |---|---|---|
 | R1 | Light `SurfaceOverlayBrush` dimming scrim | done — `#000000` @ 40% replaces white wash |
-| R2 | Editor TextMate theme follows app variant | pending |
+| R2 | Editor TextMate theme follows app variant | done — Light+/Dark+; runtime `SetTheme` on variant change |
 | R3 | Stronger guard + Makefile git policy | pending |
 | R4 | Truth-sync IMPLEMENTATION_PLAN + TOFIX | pending |
 | R5 | Optional: indent guide token, flip smoke test, nits | pending |
 
 ## Next task
 
-**R2** — align editor TextMate theme with app variant (`AUDIT_REMEDIATION_PLAN.md`).
-After R2–R4 (R5 optional): M4 shared control layer.
+**R3** — strengthen `check-theme-tokens.sh` and resolve Makefile git policy
+(`AUDIT_REMEDIATION_PLAN.md`).
+After R3–R4 (R5 optional): M4 shared control layer.

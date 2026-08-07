@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
@@ -48,6 +49,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
     private readonly EditorLanguagePickerPopup _definitionPicker;
     private readonly EditorLanguagePickerPopup _documentSymbolPicker;
     private readonly EditorLanguagePickerPopup _workspaceSymbolPicker;
+    private readonly RegistryOptions _textMateRegistry;
     private readonly TextMate.Installation _textMateInstallation;
     private readonly IndentGuideRenderer _indentGuideRenderer;
     private readonly BreakpointOperations _breakpointOperations;
@@ -121,10 +123,11 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
             }
         };
 
-        // Initialize TextMate with the DarkPlus theme (matches app dark theme).
         // TextMateSharp.Grammars bundles 100+ grammars — no external downloads.
-        var registry = new RegistryOptions(ThemeName.DarkPlus);
-        _textMateInstallation = _textEditor.InstallTextMate(registry);
+        _textMateRegistry = new RegistryOptions(GetTextMateThemeName(ThemeBinding.CurrentVariant));
+        _textMateInstallation = _textEditor.InstallTextMate(_textMateRegistry);
+
+        ActualThemeVariantChanged += OnThemeVariantChanged;
 
         _indentGuideRenderer = new IndentGuideRenderer(
             _textEditor.TextArea.TextView,
@@ -525,6 +528,19 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
         _instructionPointerOperations.Install();
         _instructionPointerOperations.SetMarker(_currentLocationViewModel.Marker);
     }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e) =>
+        ApplyTextMateTheme(ActualThemeVariant);
+
+    private void ApplyTextMateTheme(ThemeVariant variant) =>
+        _textMateInstallation.SetTheme(_textMateRegistry.LoadTheme(GetTextMateThemeName(variant)));
+
+    /// <summary>
+    /// Maps the app theme variant to the bundled VS Code–compatible TextMate theme.
+    /// Light (the app default) uses Light+; dark uses Dark+.
+    /// </summary>
+    internal static ThemeName GetTextMateThemeName(ThemeVariant variant) =>
+        variant == ThemeVariant.Dark ? ThemeName.DarkPlus : ThemeName.LightPlus;
 
     /// <summary>
     /// Returns the TextMate grammar scope for a file extension,
