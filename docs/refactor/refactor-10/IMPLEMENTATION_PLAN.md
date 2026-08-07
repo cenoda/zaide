@@ -2,9 +2,8 @@
 
 ## Status
 
-**In progress (2026-08-07).** M0–M3 are implemented. Post-M3 audit remediation
-**R1–R3** are done; **R4** (this pass) truth-syncs plan and TOFIX with live
-code. **R5** is optional polish, then **M4** (shared control layer).
+**In progress (2026-08-07).** M0–M3 and audit remediation **R1–R5** are done.
+**M4** (shared control layer) is next.
 
 Remediation detail and per-step prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
@@ -237,7 +236,7 @@ hover wiring remains in those files.
 
 ## Exit Conditions
 
-Refactor-wide gates (M4/M5 and optional R5 still open):
+Refactor-wide gates (M4/M5 still open):
 
 - [x] `RequestedThemeVariant="Dark"` removed; light renders by default
 - [x] Guard enforces `Color.Parse` hex and literal-channel `FromArgb` /

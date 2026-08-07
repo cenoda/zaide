@@ -15,7 +15,7 @@ namespace Zaide.App.Shell;
 /// Far-left icon-only vertical nav bar (~40px) for switching between
 /// Explorer and Source Control left-panel modes.
 /// Active icon uses PrimaryAccentBrush; inactive uses TextSecondaryBrush.
-/// Hover shows a #12FFFFFF (7% white) overlay per M0.5 spec.
+/// Hover uses <c>OverlayHoverBrush</c> (theme-aware interaction overlay).
 /// </summary>
 public class NavBar : Panel, IDisposable
 {

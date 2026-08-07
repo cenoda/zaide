@@ -131,7 +131,7 @@ public partial class EditorView : ReactiveUserControl<EditorViewModel>, IDisposa
 
         _indentGuideRenderer = new IndentGuideRenderer(
             _textEditor.TextArea.TextView,
-            ThemeBinding.GetBrush("AccentSubtleBgBrush"));
+            ThemeBinding.GetBrush("SeparatorBrush"));
 
         _breakpointOperations = new BreakpointOperations(
             _textEditor,

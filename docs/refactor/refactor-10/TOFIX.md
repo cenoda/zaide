@@ -3,11 +3,10 @@
 ## Status
 
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
-Post-M3 audit remediation **R1–R4** is complete (2026-08-07). **R5** is optional
-polish; **M4** (shared control layer) is the next required milestone.
+Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is the next required milestone.
 
-**Next task: R5** (optional — indent guide token, ThemeBinding flip smoke test,
-stale comments) **or skip to M4** if R5 is deferred.
+**Next task: M4** — shared control layer (`ControlThemeCatalog`, `AppButton`, hover
+unification, `Resources[]` → live theme binding).
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -70,8 +69,8 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | R2 — editor TextMate vs app variant | done | Light+/Dark+ from variant; theme tests + build |
 | R3 — strengthen guard + Makefile policy | done | `bash scripts/check-theme-tokens.sh`; `make check-theme-tokens` |
 | R4 — docs truth-sync | done | plan/TOFIX match live code |
-| R5 — optional polish | pending | subset in AUDIT_REMEDIATION_PLAN |
-| M4 — shared control layer | next (after optional R5) | full suite + interaction walkthrough |
+| R5 — optional polish | done | indent guide token, ThemeBinding flip smoke test, stale comments |
+| M4 — shared control layer | next | full suite + interaction walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
@@ -131,7 +130,7 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 | R2 | Editor TextMate theme follows app variant | done — Light+/Dark+; runtime `SetTheme` on variant change |
 | R3 | Stronger guard + Makefile git policy | done — Parse/FromArgb/FromRgb literals; Makefile policy A |
 | R4 | Truth-sync IMPLEMENTATION_PLAN + TOFIX | done — post-R3 reality; M1 flip repaint deferred to M4 |
-| R5 | Optional: indent guide token, flip smoke test, nits | pending |
+| R5 | Optional: indent guide token, flip smoke test, nits | done |
 
 ## R3 result (2026-08-07)
 
@@ -155,10 +154,17 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 - This board: R4 done; next task R5 (optional) or M4.
 - `AUDIT_REMEDIATION_PLAN.md`: R4 exit filled; status table R1–R4 done.
 
+## R5 result (2026-08-07)
+
+- Editor indent guides use `SeparatorBrush` instead of `AccentSubtleBgBrush` for a
+  subtler 1px guide line aligned with the file-tree indent treatment.
+- Added `ThemeBindingVariantTests`: flip `RequestedThemeVariant` Light/Dark on a
+  test-thread `Application` and assert `ThemeBinding.GetColor` / `GetBrush` change
+  for palette keys (no visual-tree repaint assertion; that remains M4).
+- NavBar stale `#12FFFFFF` comment updated to `OverlayHoverBrush`; Makefile
+  `check-theme-tokens` help text matches R3 guard scope.
+
 ## Next task
 
-**R5** (optional) — indent guide token, `ThemeBinding` variant smoke test, stale
-comments (`AUDIT_REMEDIATION_PLAN.md`). Skip if starting M4 immediately.
-
 **M4** — shared control layer (`ControlThemeCatalog`, `AppButton`, hover
-unification, `Resources[]` → live theme binding). Required after R1–R4.
+unification, `Resources[]` → live theme binding). Required after R1–R5.

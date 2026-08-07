@@ -4,7 +4,7 @@
 
 **In progress (2026-08-07).** Closes findings from the full commit audit of
 Refactor 10 M0–M3. This is **not** M4. Shared control layer work may start
-after R1–R4 (R5 is optional polish).
+after R1–R5 (R5 optional polish complete).
 
 | ID | State |
 |---|---|
@@ -12,7 +12,7 @@ after R1–R4 (R5 is optional polish).
 | R2 | done — editor TextMate follows app variant (Light+/Dark+) |
 | R3 | done — guard enforces Parse/FromArgb/FromRgb literals; Makefile tracked (policy A) |
 | R4 | done — plan and TOFIX truth-synced with post-R3 live code |
-| R5 | optional / pending |
+| R5 | done — indent guide token, ThemeBinding flip smoke test, stale comments |
 
 ## Why this exists
 
@@ -377,31 +377,16 @@ Summarize doc edits and any remaining doc risks.
 
 ### Exit
 
-- [ ] Chosen items done with tests where applicable
-- [ ] Commit: `test/fix(refactor-10-r5): …` matching the subset
+- [x] Chosen items done with tests where applicable
+- [x] Commit: `test/fix(refactor-10-r5): …` matching the subset
 
-### Agent prompt (copy-paste)
+### Result (2026-08-07)
 
-```
-You are working on Zaide Refactor 10 audit remediation milestone R5
-(optional polish) only.
-
-Read:
-- docs/refactor/refactor-10/AUDIT_REMEDIATION_PLAN.md (R5 section)
-- docs/refactor/refactor-10/TOFIX.md
-
-Implement only the R5 items still marked pending in TOFIX (indent guide token,
-ThemeBinding variant smoke test, stale comments). Skip anything already done.
-
-Constraints:
-- No M4 control layer.
-- Keep changes minimal and tested.
-- English commits/docs.
-
-Verify focused tests + build. Update TOFIX R5 row.
-```
-
----
+- `EditorView` indent guides: `SeparatorBrush` replaces `AccentSubtleBgBrush`.
+- `ThemeBindingVariantTests`: Light/Dark flip on test `Application`; asserts
+  `GetColor`/`GetBrush` change for `PrimaryAccentBrushColor` and
+  `TextPrimaryBrush`.
+- NavBar comment and Makefile `check-theme-tokens` help aligned with R3 guard.
 
 ## Explicitly deferred to M4 / M5
 
@@ -431,5 +416,5 @@ tightening can be softened by expanding allowlist without reverting tokens.
 
 ## After this plan
 
-When R1–R4 are done (R5 optional), set TOFIX next task to **M4 — shared
+When R1–R5 are done, set TOFIX next task to **M4 — shared
 control layer** and implement from `IMPLEMENTATION_PLAN.md` M4 section only.
