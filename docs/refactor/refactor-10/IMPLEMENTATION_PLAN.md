@@ -4,6 +4,7 @@
 
 **In progress (2026-08-07).** M0–M3 and audit remediation **R1–R5** are done.
 **M4** (shared control layer) is done; **M4a**, **M4b**, **M4c**, and **M4d** are done.
+**Next: M4e** — chrome shape unification (before M5 glass / depth / motion).
 
 Remediation detail and per-step prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
@@ -82,6 +83,10 @@ glass texture where the platform supports it.
    C# factories and code-built `ControlTheme` objects. XAML is limited to cases
    where template replacement is unavoidable (scrollbars, Semi overrides),
    which stays inside `DESIGN.md §1` tier 1–2.
+7. **Chrome shape unification (M4e) lands before M5.** Shared hover (M4) is not
+   enough if silhouettes disagree. Compact toolbar families share height,
+   padding, radius, typography, and resting border policy; glass/elevation
+   polish does not start until that language is consistent.
 
 ## Token System
 
@@ -133,7 +138,8 @@ docs/refactor/refactor-10/archive/legacy-navy-palette.md
 | M2 | Semantic tokens and both ramps authored, typography scale and elevation restored | contrast-ratio tests + `dotnet test Zaide.slnx --no-build` |
 | M3 | Partial literal migration; guard for Parse/FromArgb/FromRgb literals | `bash scripts/check-theme-tokens.sh` or `make check-theme-tokens` |
 | M4 | Shared control layer replaces per-panel hover code | full suite + hover/pressed/focus walkthrough — **done** (M4a–M4d) |
-| M5 | Glass surfaces, elevation, radius and motion polish | main screens with and without blur + full suite |
+| M4e | Chrome shape unification (toolbar / segmented / opener families) | Townhall header screenshot parity + factory tests + focused suite |
+| M5 | Glass surfaces, elevation, and motion polish | main screens with and without blur + full suite |
 
 ### M0 — Entry gate (documentation only)
 
@@ -220,13 +226,80 @@ zero `Application.Current.Resources[]` indexer sites in `src` (M4d).
 **Exit:** `rg 'Application\.Current.*Resources\[' src` returns 0; design-system
 variant-repaint tests green; `make check-theme-tokens` green.
 
+### M4e — Chrome shape unification (pre-M5)
+
+**Why before M5:** Glass, elevation, and motion polish on mismatched chrome
+freezes the inconsistency under polish. M4 unified hover/factories; it did **not**
+unify control silhouettes. Townhall chat header (2026-08-07) already shows the
+gap:
+
+| Group | Live shape | Source |
+|---|---|---|
+| All / Chat / Activity | Filled segmented track (`SurfaceRaised3`), borderless segments, `RadiusFull` | `TownhallView.CreateMessageFilterToggle` + `BuildFilterGroup` |
+| Trace / Memory / Usage | Discrete outlined buttons, 1px `TextSecondary` borders, `RadiusSm` | `TownhallView.CreateTransparencyOpenerButton` |
+
+Evidence: `verification/m4e-townhall-header-before.png` (and crop).
+
+**Confirmed decisions**
+
+1. Adjacent toolbar chrome on the same row shares one **shape family**: height,
+   padding, typography, corner radius, and border policy.
+2. Mutually exclusive filters stay a **segmented group** (shared track +
+   segments). Independent panel openers stay **independent chips**, not a
+   second segmented radio group — but they use the **same silhouette metrics**
+   as filter segments (no heavy discrete outline boxes).
+3. Default toolbar radius for compact header controls is **`RadiusSm` or
+   `RadiusMd`**, not a mix of `RadiusFull` segments next to boxed `RadiusSm`
+   outlines. Pill (`RadiusFull`) is reserved for true pills (avatars, badges)
+   unless a factory deliberately ships a pill segment style for **both** groups.
+4. Border policy for compact toolbar labels/chips: **no 1px box border** in
+   resting state. Selected / open / hover use token overlays
+   (`OverlaySelectedBrush`, `OverlayHoverBrush`, accent subtle) — same language
+   as M4 interaction tokens. Separators between groups remain 1px gaps or a
+   thin vertical divider, not per-button outlines.
+5. Prefer extending `AppButton` / a small segmented helper under
+   `DesignSystem/Controls` over one-off `TownhallView` constructors.
+6. Scope is **shape language**, not glass/blur/elevation/motion (those remain M5).
+
+**Work**
+
+- Codify chrome shape rules in `docs/DESIGN.md` (new § or extension of §6/§9).
+- Add or extend factories (e.g. segmented track + segment toggle, toolbar chip /
+  independent opener) so Townhall no longer hand-builds two incompatible styles.
+- Migrate `TownhallView` filter strip + Trace/Memory/Usage openers onto the
+  shared factories; preserve automation names, help text, and command wiring.
+- Align any same-row compact toolbar chrome that still uses ad-hoc outline boxes
+  if it is cheap and already in the M4 factory path (do not re-skin popups,
+  editors, or terminal chrome wholesale).
+- Capture an after screenshot under `verification/`.
+
+**Out of scope**
+
+- `TransparencyLevelHint`, glass fills, shadow elevation, motion curves (M5).
+- Theme switcher / OS following.
+- Full app-wide restyle of every bordered popup (`CommandPaletteOverlay`,
+  completion/hover popups, settings pickers) — those stay M5 elevation work.
+
+**Exit**
+
+- Townhall header: filter group and evidence openers share height, padding,
+  radius, typography, and resting border policy; no discrete outline-box vs
+  borderless-segment mismatch.
+- Factories own the chrome; `TownhallView` local `Create*Button` constructors
+  either call factories or are removed.
+- `docs/DESIGN.md` states the shape rules.
+- Build + design-system / Townhall-focused tests green;
+  `make check-theme-tokens` green.
+- After screenshot lands in `verification/`.
+
 ## M5 — Glass, depth, and motion
 
 - Set `TransparencyLevelHint` on `MainWindow` and add the `GlassSupport` probe.
 - Apply `SurfaceGlass` with `SurfaceGlassFallback` to the command palette,
   overlays, and sidebar.
 - Apply `ShadowSm/Md/Lg` to overlays, floating panels, and dropdowns.
-- Unify corner radii and replace heavy borders with 1px subtle borders or gaps.
+- Apply the M4e radius / border policy on elevated surfaces; no new competing
+  silhouettes.
 - Apply 150–200 ms cubic-eased hover and focus transitions (`DESIGN.md §4`).
 
 **Exit:** main screens verified with and without blur; full suite green.
@@ -268,6 +341,7 @@ Refactor-wide gates (M5 still open):
       `ThemeBinding.GetBrush` one-shot only where callers re-apply on flip)
 - [x] Shared control layer / hover unification (M4a–M4c)
 - [x] Zero `Application.Current.Resources[]` indexer sites in `src` (M4d)
+- [ ] Chrome shape unification (M4e) — toolbar / segmented / opener families
 - [ ] Glass, elevation, motion polish (M5)
 
 ## Rollback Plan

@@ -120,6 +120,26 @@ var animation = new Animation
 - **Separation:** Panels are separated by 1px gap or subtle opacity difference — not thick borders.
 - No element should touch a panel edge without padding.
 
+### 6.1 Compact toolbar chrome (Refactor 10 M4e)
+
+Adjacent compact controls on the same header/toolbar row must share one
+**shape family**. Hover unification alone is not enough if silhouettes disagree.
+
+| Rule | Requirement |
+|------|-------------|
+| Shared metrics | Same height, horizontal/vertical padding, caption typography, and corner radius within a row group family |
+| Resting borders | No 1px outline box on compact label/chip toolbar controls at rest |
+| Selection / open | Use interaction tokens (`OverlaySelectedBrush`, `OverlayHoverBrush`, accent subtle) — not a heavier border |
+| Group separators | 1px gap or a thin vertical divider between *groups*, not per-button outlines |
+| Segmented filters | Mutually exclusive modes (e.g. All / Chat / Activity) use a shared track + segments |
+| Independent openers | Toggle-open panels (e.g. Trace / Memory / Usage) stay independent chips with the **same silhouette metrics** as segments — not a second radio track and not discrete outlined boxes |
+| Radius | Prefer `RadiusSm` or `RadiusMd` for compact toolbar controls. `RadiusFull` is for true pills (avatars, badges) unless a shared factory deliberately applies pill geometry to **every** control in that family |
+| Ownership | Build via `AppButton` / design-system control factories; do not hand-style one-off silhouettes in feature views |
+
+**Anti-pattern (observed pre-M4e):** a filled borderless segmented track next to
+discrete `RadiusSm` buttons with 1px `TextSecondary` outlines on the same
+Townhall header row.
+
 ---
 
 ## 7. Reactive UI (Decision: ReactiveUI)
@@ -190,6 +210,7 @@ Before marking any UI task complete:
 - [ ] All animations 150–200ms with cubic easing
 - [ ] All panels have ≥ 16px inner padding
 - [ ] No visible thick panel borders — separation by gap, shadow, or blur depth
+- [ ] Same-row compact toolbar chrome shares height, padding, radius, typography, and resting border policy (`§6.1`)
 - [ ] Reactive bindings use `WhenActivated` with `d.Add(...)`
 - [ ] Font is system-native (not custom/bundled)
 - [ ] Glass fallback works on non-composited environments
@@ -198,4 +219,4 @@ Before marking any UI task complete:
 
 ---
 
-*Last updated: 2026-08-06*
+*Last updated: 2026-08-07*

@@ -5,7 +5,7 @@
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
 Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is done; **M4a** done (2026-08-07); **M4b** done (2026-08-07); **M4c** done (2026-08-07); **M4d** done (2026-08-07).
 
-**Next task: M5** — glass surfaces, elevation, radius and motion polish.
+**Next task: M4e** — chrome shape unification (before M5 glass / depth / motion).
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -21,6 +21,7 @@ theming mechanism and the shared control layer, with light as the default theme.
 | Theme switcher UI and persistence | removed, separate parallel phase |
 | Light + dark ramps | both authored in this refactor (M2) |
 | Glass and blur | in scope (M5) with an opaque fallback |
+| Chrome shape unification | in scope (M4e) before M5 polish |
 
 ## M0 findings (from the live audit)
 
@@ -74,7 +75,8 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | M4b — AppButton/AppTextBox/ListRow/PanelChrome | done | factory unit tests |
 | M4c — hover unification (panels) | done | walkthrough |
 | M4d — Resources[] indexer + variant flip repaint | done | design-system repaint tests + zero Resources[] |
-| M5 — glass, depth, motion | next | main screens with and without blur + full suite |
+| M4e — chrome shape unification | next | Townhall header parity + factory tests + focused suite |
+| M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
 See `AUDIT_REMEDIATION_PLAN.md` for prompts and exit conditions.
@@ -169,7 +171,28 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
 ## Next task
 
-**M5** — glass surfaces, elevation, radius and motion polish (`IMPLEMENTATION_PLAN.md` M5).
+**M4e** — chrome shape unification (`IMPLEMENTATION_PLAN.md` M4e). Do **not**
+start M5 glass / elevation / motion until M4e exits.
+
+Evidence of the mismatch:
+`verification/m4e-townhall-header-before.png` — All/Chat/Activity is a filled
+segmented track with borderless segments; Trace/Memory/Usage are discrete
+outlined boxes with a different radius and border policy.
+
+## M4e plan note (2026-08-07)
+
+Inserted as a pre-M5 milestone after M4d close. M4 unified hover and factories
+but left Townhall header chrome with two silhouettes on the same row. Shape
+language (height, padding, radius, typography, resting borders) must land
+before glass polish freezes the inconsistency.
+
+Confirmed decisions live in `IMPLEMENTATION_PLAN.md` M4e. Short form:
+
+- Same-row toolbar chrome shares one shape family.
+- Filters remain segmented; Trace/Memory/Usage remain independent chips, not a
+  second radio group — same metrics, no resting 1px box borders.
+- Prefer `AppButton` / design-system factories over `TownhallView` one-offs.
+- `docs/DESIGN.md` must state the rules as part of the M4e commit.
 
 ## M4d result (2026-08-07)
 
