@@ -54,7 +54,7 @@
     <Color x:Key="SurfaceGlassFallbackColor">#F0F1F5</Color>
     <SolidColorBrush x:Key="SurfaceGlassFallbackBrush" Color="{StaticResource SurfaceGlassFallbackColor}" />
     <!-- Translucent overlay dim for modal scrims -->
-    <SolidColorBrush x:Key="SurfaceOverlayBrush" Color="#FFFFFF" Opacity="0.40" />
+    <SolidColorBrush x:Key="SurfaceOverlayBrush" Color="#000000" Opacity="0.40" />
 
     <!-- Border: 1px separators and control borders, plus focus ring -->
     <Color x:Key="BorderSubtleColor">#7F8793</Color>
