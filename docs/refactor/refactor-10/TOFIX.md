@@ -2,8 +2,11 @@
 
 ## Status
 
-M0 (plan and archive) through M3 (literal replacement and guard) are complete.
-M4 is the next task.
+M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
+A post-M3 commit audit (2026-08-07) found honesty and visual gaps; those are
+tracked as **R1–R5** in `AUDIT_REMEDIATION_PLAN.md` and must finish before M4.
+
+**Next task: R2** (editor TextMate theme vs app variant).
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -59,11 +62,19 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | Milestone | State | Gate |
 |---|---|---|
 | M0 — plan and archive | done | docs review |
-| M1 — theme variant infrastructure | done | key-parity test + forced runtime variant flip |
+| M1 — theme variant infrastructure | done* | key-parity test; full panel repaint on flip deferred to M4 |
 | M2 — semantic tokens and both ramps | done | contrast-ratio tests + full suite |
-| M3 — literal replacement and guard | done | `scripts/check-theme-tokens.sh` |
-| M4 — shared control layer | pending | full suite + interaction walkthrough |
+| M3 — literal replacement and guard | done* | partial literal migration; weak guard (see audit) |
+| R1 — light SurfaceOverlayBrush scrim | done | black 40% scrim; parity + build green |
+| R2 — editor TextMate vs app variant | pending | editor path + build |
+| R3 — strengthen guard + Makefile policy | pending | `bash scripts/check-theme-tokens.sh` |
+| R4 — docs truth-sync | pending | plan/TOFIX match live code |
+| R5 — optional polish | pending | subset in AUDIT_REMEDIATION_PLAN |
+| M4 — shared control layer | blocked on R1–R4 | full suite + interaction walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
+
+\*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
+See `AUDIT_REMEDIATION_PLAN.md` for prompts and exit conditions.
 
 ## Open questions
 
@@ -88,22 +99,37 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 
 ## M3 result (2026-08-06)
 
-- Replaced hardcoded color literals (`Color.Parse("#...")`, `Color.FromArgb`,
-  `Color.FromRgb`, bare hex strings) in 16 production files with
-  `ThemeBinding.GetBrush`/`GetColor` semantic token references.
+- Replaced many hardcoded color literals in 16 production files with
+  `ThemeBinding.GetBrush`/`GetColor` (and some legacy palette keys).
 - Converted remaining static brush/color caches to instance caches invalidated
   on `ActualThemeVariantChanged` (StatusBar, TownhallPeoplePanel,
   TownhallNavigationPanel).
-- Routed raw `new Thickness(` spacing values through `LayoutTokens.SpacingXxx`
-  and `LayoutTokens.NoneThickness`; 1px border widths left as literals (not
-  spacing).
-- Added `scripts/check-theme-tokens.sh` guard (Color.Parse hex form) and wired
-  a `check-theme-tokens` target into the `Makefile`.
-- `AgentMemoryPanel`, `AgentBackendBindingPanel`, and `BottomPanelHost` were
-  already token-based (M0 audit counts predated M1/M2).
-- All 4062 tests pass; `dotnet build` clean.
+- Routed several raw `new Thickness(` spacing values through `LayoutTokens`;
+  1px border widths left as literals (not spacing). Residuals remain (~27
+  `new Thickness(` in `src`).
+- Added `scripts/check-theme-tokens.sh` that currently greps **only**
+  `Color.Parse("#…")` (not `FromArgb`/`FromRgb` despite comments). A local
+  `Makefile` target exists on disk but is **gitignored** — not repo-wired.
+- Residual production color construction still present (terminal ANSI,
+  breakpoint RGB, elevation fallbacks, computed alpha overlays, TextStyles
+  navy fallbacks).
+- Known mapping issues deferred to remediation: light `SurfaceOverlayBrush`
+  white wash; editor TextMate `DarkPlus` under light default.
+- Build clean; design-system tests green at audit time.
+
+## Audit remediation (2026-08-07)
+
+Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
+
+| ID | Item | State |
+|---|---|---|
+| R1 | Light `SurfaceOverlayBrush` dimming scrim | done — `#000000` @ 40% replaces white wash |
+| R2 | Editor TextMate theme follows app variant | pending |
+| R3 | Stronger guard + Makefile git policy | pending |
+| R4 | Truth-sync IMPLEMENTATION_PLAN + TOFIX | pending |
+| R5 | Optional: indent guide token, flip smoke test, nits | pending |
 
 ## Next task
 
-M4: shared control layer — centralize hover/pressed/focus state styles and
-focus rings into a shared `ControlTheme` / `Styles` layer.
+**R2** — align editor TextMate theme with app variant (`AUDIT_REMEDIATION_PLAN.md`).
+After R2–R4 (R5 optional): M4 shared control layer.

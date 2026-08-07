@@ -2,9 +2,13 @@
 
 ## Status
 
-**Planned (2026-08-06).** Supersedes the earlier placeholder content of this
-file, which described F8 image preview and accessibility work. Those items are
-**not** part of Refactor 10:
+**In progress (2026-08-07).** M0–M3 commits have landed. A post-M3 audit found
+visual and honesty gaps; close those via `AUDIT_REMEDIATION_PLAN.md` (R1–R4,
+optional R5) **before** starting M4.
+
+Supersedes the earlier placeholder content of this file, which described F8
+image preview and accessibility work. Those items are **not** part of
+Refactor 10:
 
 | Deferred item | New owner |
 |---|---|
