@@ -72,4 +72,3 @@ publish/
 
 ## Avalonia specific
 *.axaml.cs.bak
-Makefile

@@ -10,7 +10,8 @@ until R1–R4 land (R5 is optional polish).
 |---|---|
 | R1 | done — light `SurfaceOverlayBrush` is `#000000` @ 0.40 |
 | R2 | done — editor TextMate follows app variant (Light+/Dark+) |
-| R3–R4 | pending |
+| R3 | done — guard enforces Parse/FromArgb/FromRgb literals; Makefile tracked (policy A) |
+| R4 | pending |
 | R5 | optional / pending |
 
 ## Why this exists
@@ -244,11 +245,23 @@ Summarize changes, files, verification, residual risks.
 
 ### Exit
 
-- [ ] Guard script matches its own header comment
-- [ ] `bash scripts/check-theme-tokens.sh` exits 0 on current tree after
+- [x] Guard script matches its own header comment
+- [x] `bash scripts/check-theme-tokens.sh` exits 0 on current tree after
       intentional allowlists
-- [ ] Makefile policy recorded and consistent with git
-- [ ] Commit: `chore(refactor-10-r3): strengthen theme-token guard`
+- [x] Makefile policy recorded and consistent with git
+- [x] Commit: `chore(refactor-10-r3): strengthen theme-token guard`
+
+### Result (2026-08-07)
+
+`scripts/check-theme-tokens.sh` now flags `Color.Parse("#…")`,
+`Color.FromArgb(…)`, and `Color.FromRgb(…)` when all channel arguments are
+numeric literals. Computed channels (e.g. `accent.R`) are allowed without
+file-level bans. Path excludes: `TerminalRenderControl.cs` (ANSI palette),
+`TextStyles.cs` and `Elevation.cs` (justified ThemeBinding fallbacks).
+**Makefile policy A:** removed `Makefile` from `.gitignore` and committed the
+on-disk Makefile with `check-theme-tokens` plus existing local targets.
+No new production violations; residual literal debt outside these patterns
+remains documented for M4.
 
 ### Agent prompt (copy-paste)
 

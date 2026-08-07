@@ -6,7 +6,7 @@ M0 (plan and archive) through M3 (literal replacement and guard) are implemented
 A post-M3 commit audit (2026-08-07) found honesty and visual gaps; those are
 tracked as **R1–R5** in `AUDIT_REMEDIATION_PLAN.md` and must finish before M4.
 
-**Next task: R3** (strengthen theme-token guard + Makefile policy).
+**Next task: R4** (docs truth-sync after audit remediation).
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -67,7 +67,7 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | M3 — literal replacement and guard | done* | partial literal migration; weak guard (see audit) |
 | R1 — light SurfaceOverlayBrush scrim | done | black 40% scrim; parity + build green |
 | R2 — editor TextMate vs app variant | done | Light+/Dark+ from variant; theme tests + build |
-| R3 — strengthen guard + Makefile policy | pending | `bash scripts/check-theme-tokens.sh` |
+| R3 — strengthen guard + Makefile policy | done | `bash scripts/check-theme-tokens.sh`; `make check-theme-tokens` |
 | R4 — docs truth-sync | pending | plan/TOFIX match live code |
 | R5 — optional polish | pending | subset in AUDIT_REMEDIATION_PLAN |
 | M4 — shared control layer | blocked on R1–R4 | full suite + interaction walkthrough |
@@ -107,9 +107,12 @@ See `AUDIT_REMEDIATION_PLAN.md` for prompts and exit conditions.
 - Routed several raw `new Thickness(` spacing values through `LayoutTokens`;
   1px border widths left as literals (not spacing). Residuals remain (~27
   `new Thickness(` in `src`).
-- Added `scripts/check-theme-tokens.sh` that currently greps **only**
-  `Color.Parse("#…")` (not `FromArgb`/`FromRgb` despite comments). A local
-  `Makefile` target exists on disk but is **gitignored** — not repo-wired.
+- Added `scripts/check-theme-tokens.sh` that greps `Color.Parse("#…")`,
+  `Color.FromArgb(…)`, and `Color.FromRgb(…)` with numeric-literal channels
+  (computed channels such as `accent.R` are allowed). Path excludes:
+  `TerminalRenderControl.cs` (ANSI palette), `TextStyles.cs` and `Elevation.cs`
+  (ThemeBinding fallbacks). Invoked via `bash scripts/check-theme-tokens.sh`
+  or `make check-theme-tokens` (Makefile tracked as of R3).
 - Residual production color construction still present (terminal ANSI,
   breakpoint RGB, elevation fallbacks, computed alpha overlays, TextStyles
   navy fallbacks).
@@ -125,12 +128,26 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 |---|---|---|
 | R1 | Light `SurfaceOverlayBrush` dimming scrim | done — `#000000` @ 40% replaces white wash |
 | R2 | Editor TextMate theme follows app variant | done — Light+/Dark+; runtime `SetTheme` on variant change |
-| R3 | Stronger guard + Makefile git policy | pending |
+| R3 | Stronger guard + Makefile git policy | done — Parse/FromArgb/FromRgb literals; Makefile policy A |
 | R4 | Truth-sync IMPLEMENTATION_PLAN + TOFIX | pending |
 | R5 | Optional: indent guide token, flip smoke test, nits | pending |
 
+## R3 result (2026-08-07)
+
+- Guard now enforces `Color.Parse("#…")`, literal-channel `Color.FromArgb`, and
+  literal-channel `Color.FromRgb` in `src/**/*.cs` via `scripts/check-theme-tokens.sh`.
+- Computed alpha from theme channels (e.g. `Color.FromArgb(0x30, accent.R, …)`)
+  is allowed without path excludes.
+- Path excludes (one-line justification each): `TerminalRenderControl.cs` (ANSI
+  palette), `DesignSystem/TextStyles.cs` (ThemeBinding fallbacks),
+  `DesignSystem/Elevation.cs` (BoxShadow fallbacks behind `ThemeBinding.Resolve`).
+- **Makefile policy A:** `Makefile` removed from `.gitignore` and committed with
+  `check-theme-tokens` plus existing local `run`/`build`/`test` targets.
+- No trivial production violations to fix; residual literal patterns outside the
+  guard (e.g. `Colors.White`, `new Thickness(`) remain for M4.
+
 ## Next task
 
-**R3** — strengthen `check-theme-tokens.sh` and resolve Makefile git policy
-(`AUDIT_REMEDIATION_PLAN.md`).
-After R3–R4 (R5 optional): M4 shared control layer.
+**R4** — truth-sync `IMPLEMENTATION_PLAN.md` and this board with post-audit
+reality (`AUDIT_REMEDIATION_PLAN.md`).
+After R4 (R5 optional): M4 shared control layer.
