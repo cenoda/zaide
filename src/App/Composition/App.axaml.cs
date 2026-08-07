@@ -17,6 +17,7 @@ using Zaide.Features.Agents.Application.Transparency;
 using Zaide.Features.Agents.Contracts;
 using Zaide.Features.Agents.Presentation;
 using Zaide.Features.Agents.Presentation.Transparency;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.App.Composition;
 public partial class App : Application
@@ -24,6 +25,7 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        ControlThemeCatalog.Register(this);
     }
 
     public override void OnFrameworkInitializationCompleted()

@@ -51,7 +51,7 @@ public sealed class ArchitectureInventoryTests
         // Phase 14 M8: −1 internal AgentTownhallMirrorCoordinator.
         Assert.Equal((24, 14, 10), byNamespace["Zaide.App.Shell"]);
         // Refactor 10 M2: +1 internal Elevation.
-        Assert.Equal((6, 2, 4), byNamespace["Zaide.UI.DesignSystem"]);
+        Assert.Equal((7, 2, 5), byNamespace["Zaide.UI.DesignSystem"]);
         // Phase 22/23 settings v4: +1 public AgentsSettings, +1 internal type (12p/1i → 13 total).
         Assert.Equal((13, 12, 1), byNamespace["Zaide.Features.Settings.Domain"]);
         Assert.Equal((3, 3, 0), byNamespace["Zaide.Features.Settings.Contracts"]);
@@ -321,7 +321,8 @@ public sealed class ArchitectureInventoryTests
         // Phase 23 F10: +1 IconLucideMap (885).
         // Refactor 10 M1: +4 ThemeBinding, Light.axaml, Shared.axaml, ThemeTokenParityTests (889).
         // Refactor 10 M2: +1 Elevation.cs (890).
-        Assert.Equal(890, inventory.SourceFiles.Count);
+        // Refactor 10 M4a: +1 ControlThemeCatalog.cs (891).
+        Assert.Equal(891, inventory.SourceFiles.Count);
         Assert.False(byFolder.ContainsKey("src"));
         Assert.False(byFolder.ContainsKey("Models"));
         Assert.False(byFolder.ContainsKey("Services"));
@@ -333,7 +334,8 @@ public sealed class ArchitectureInventoryTests
         Assert.Equal(43, byFolder["App"]);
         // Refactor 10 M1: +1 ThemeBinding (5).
         // Refactor 10 M2: +1 Elevation.cs (6).
-        Assert.Equal(6, byFolder["UI"]);
+        // Refactor 10 M4a: +1 ControlThemeCatalog.cs (7).
+        Assert.Equal(7, byFolder["UI"]);
         // Phase 14 M6: +10 conversation persistence production files.
         // Phase 14 M7: +2 draft-state production files.
         // Phase 15 M1b: +17 backend-neutral session/event contract production files.

@@ -3,10 +3,9 @@
 ## Status
 
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
-Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is the next required milestone.
+Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is in progress; **M4a** done (2026-08-07).
 
-**Next task: M4** — shared control layer (`ControlThemeCatalog`, `AppButton`, hover
-unification, `Resources[]` → live theme binding).
+**Next task: M4b** — `AppButton`, `AppTextBox`, `ListRow`, `PanelChrome` factories.
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -70,7 +69,10 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | R3 — strengthen guard + Makefile policy | done | `bash scripts/check-theme-tokens.sh`; `make check-theme-tokens` |
 | R4 — docs truth-sync | done | plan/TOFIX match live code |
 | R5 — optional polish | done | indent guide token, ThemeBinding flip smoke test, stale comments |
-| M4 — shared control layer | next | full suite + interaction walkthrough |
+| M4 — shared control layer | in progress | full suite + interaction walkthrough |
+| M4a — ControlThemeCatalog + focus ring | done | catalog registration smoke tests + build |
+| M4b — AppButton/AppTextBox/ListRow/PanelChrome | next | factory unit tests |
+| M4c — hover unification (panels) | pending | walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
@@ -166,5 +168,18 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
 ## Next task
 
-**M4** — shared control layer (`ControlThemeCatalog`, `AppButton`, hover
-unification, `Resources[]` → live theme binding). Required after R1–R5.
+**M4b** — `AppButton`, `AppTextBox`, `ListRow`, and `PanelChrome` factories on top of
+`ControlThemeCatalog`. Required before M4c panel hover migration.
+
+## M4a result (2026-08-07)
+
+- Added `src/UI/DesignSystem/Controls/ControlThemeCatalog.cs`: C#-built
+  `ControlTheme` + `Style` objects for hover, pressed, selected, focus, and
+  disabled interaction states using `OverlayHoverBrush`, `OverlayPressedBrush`,
+  `OverlaySelectedBrush`, and `BorderFocusBrush` via `DynamicResourceExtension`.
+- Registered catalog in `App.Initialize()` after XAML load (idempotent; test
+  bootstrap picks it up through the same `App` path).
+- `zaide-interactive` / `zaide-selected` style classes and
+  `Zaide.ControlTheme.InteractiveSurface` resource key for M4b consumers.
+- `ControlThemeCatalogTests` smoke coverage for registration and focus-ring token.
+- Build clean; design-system tests green; theme-token guard passes.
