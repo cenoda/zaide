@@ -36,8 +36,7 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
 
     public DebugPanel()
     {
-        Background = (IBrush?)Avalonia.Application.Current?.Resources["SurfacePanelBrush"]
-            ?? Brushes.Transparent;
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfacePanelBrush");
 
         _statusText = TextStyles.Caption(string.Empty);
         _statusText.Margin = LayoutTokens.Inset(
@@ -49,13 +48,12 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
         {
             Text = "No active debug session.\n\nStart the debugger to see console output, call stack, and variables here.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"]
-                ?? Brushes.Gray,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
             IsVisible = true,
         };
+        ThemeBinding.SetBrush(_emptyStateText, TextBlock.ForegroundProperty, "TextSecondaryBrush");
 
         var consoleHeader = TextStyles.Header("Debug Console");
         consoleHeader.Margin = LayoutTokens.Inset(
@@ -77,9 +75,8 @@ public sealed class DebugPanel : ReactiveUserControl<DebugPanelViewModel>
                     TextWrapping = TextWrapping.Wrap,
                     FontFamily = new FontFamily("monospace"),
                     FontSize = 12,
-                    Foreground = (IBrush?)Avalonia.Application.Current?.Resources[brushKey]
-                        ?? Brushes.White,
                 };
+                ThemeBinding.SetBrush(text, TextBlock.ForegroundProperty, brushKey);
                 return new Border
                 {
                     Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),

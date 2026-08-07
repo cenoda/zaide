@@ -44,7 +44,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         // --- Header (clickable folder path) ---
         _headerIcon = IconFactory.Create(
             "Icon.Folder",
-            (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
+            "SecondaryAccentBrush",
             14);
 
         _headerText = TextStyles.Caption("Open Folder...");
@@ -66,7 +66,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         {
             Content = IconFactory.Create(
                 "Icon.X",
-                (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                "TextSecondaryBrush",
                 12),
             Background = Avalonia.Media.Brushes.Transparent,
             Padding = LayoutTokens.Uniform(LayoutTokens.SpacingXxs),
@@ -86,27 +86,25 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         // distinct accent so the tree reads as colored, not monochrome.
         // The fallback for unknown extensions is the muted TextSecondary.
         // Per M3.1, the resolver returns Icon.Unknown (no Icon.File key exists).
-        IBrush? BrushForIconKey(string iconKey)
-        {
-            return iconKey switch
+        static string BrushKeyForIconKey(string iconKey) =>
+            iconKey switch
             {
-                "Icon.Folder"  => (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                "Icon.Code"    => (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-                "Icon.Text"    => (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
-                "Icon.Image"   => (IBrush?)Application.Current!.Resources["WarningBrush"],
-                "Icon.Config"  => (IBrush?)Application.Current!.Resources["IdleBrush"],
-                "Icon.Markup"  => (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-                "Icon.Project" => (IBrush?)Application.Current!.Resources["SuccessBrush"],
-                _              => (IBrush?)Application.Current!.Resources["TextSecondaryBrush"] // Icon.Unknown + any future keys
+                "Icon.Folder"  => "TextSecondaryBrush",
+                "Icon.Code"    => "PrimaryAccentBrush",
+                "Icon.Text"    => "SecondaryAccentBrush",
+                "Icon.Image"   => "WarningBrush",
+                "Icon.Config"  => "IdleBrush",
+                "Icon.Markup"  => "PrimaryAccentBrush",
+                "Icon.Project" => "SuccessBrush",
+                _              => "TextSecondaryBrush"
             };
-        }
 
-        // M3.2 / M3.3: capture the active brushes used by row paint.
-        var activeBrush = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
-        var activeBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
-        var parentFolderBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
+
         void PaintRowForSelection(Border row, Border activeStrip, FileTreeNode thisNode)
         {
+            var activeBrush = ThemeBinding.GetBrush("PrimaryAccentBrush");
+            var activeBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
+            var parentFolderBgBrush = ThemeBinding.GetBrush("AccentSubtleBgBrush");
             var selected = ViewModel?.SelectedFile;
             if (selected is null)
             {
@@ -145,15 +143,14 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                 build: (node, _) =>
                 {
                     var iconKey = FileIconKeyResolver.GetIconKey(node.Name, node.IsDirectory);
-                    var iconBrush = BrushForIconKey(iconKey);
-                    var icon = IconFactory.Create(iconKey, iconBrush, 14);
+                    var icon = IconFactory.Create(iconKey, BrushKeyForIconKey(iconKey), 14);
 
                     var tb = new TextBlock
                     {
                         Text = node.Name,
-                        Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
                         VerticalAlignment = VerticalAlignment.Center
                     };
+                    ThemeBinding.SetBrush(tb, TextBlock.ForegroundProperty, "TextPrimaryBrush");
 
                     var content = new StackPanel
                     {
@@ -182,13 +179,14 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
                         : 8d;
                     for (var i = 0; i < node.Depth; i++)
                     {
-                        indentStrip.Children.Add(new Border
+                        var guide = new Border
                         {
                             Width = 1,
-                            Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
                             // M5-allow: The 1px compensation keeps the 1px guide centered inside an 8px depth slot.
                             Margin = LayoutTokens.Inset(0, LayoutTokens.SpacingXxs, spacingSm - 1, LayoutTokens.SpacingXxs)
-                        });
+                        };
+                        ThemeBinding.SetBrush(guide, Border.BackgroundProperty, "SeparatorBrush");
+                        indentStrip.Children.Add(guide);
                     }
 
                     // M3.3: 2px PrimaryAccent left border on the active file row.
@@ -252,11 +250,9 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
         // M1.5: Helper to create a MenuItem with SurfaceRaisedBrush background.
         MenuItem CreateStyledMenuItem(string header)
         {
-            return new MenuItem
-            {
-                Header = header,
-                Background = (IBrush?)Application.Current!.Resources["SurfaceRaisedBrush"]
-            };
+            var item = new MenuItem { Header = header };
+            ThemeBinding.SetBrush(item, MenuItem.BackgroundProperty, "SurfaceRaisedBrush");
+            return item;
         }
 
         // M3: Context Menu for tree nodes
@@ -373,16 +369,18 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
             },
             [DockPanel.DockProperty] = Dock.Top,
             Padding = LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingXs),
-            BorderBrush = (IBrush?)Application.Current!.Resources["SecondaryAccentBrush"],
             BorderThickness = new Thickness(0, 0, 0, 1)
         };
+        ThemeBinding.SetBrush(headerBorder, Border.BorderBrushProperty, "SecondaryAccentBrush");
 
-        Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfaceBaseBrush");
 
         Content = new DockPanel
         {
             Children = { headerBorder, _treeView }
         };
+
+        ThemeBinding.SubscribeVariantChanged(this, RepaintAllFileTreeRows);
 
         // --- Reactive bindings ---
         this.WhenActivated(d =>
@@ -473,10 +471,8 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     private void RepaintAllFileTreeRows()
     {
         if (_treeView is null) return;
-        var resources = Application.Current?.Resources;
-        if (resources is null) return;
 
-        var activeBrush = (IBrush?)resources["PrimaryAccentBrush"];
+        var activeBrush = ThemeBinding.GetBrush("PrimaryAccentBrush");
         var activeBg = ThemeBinding.GetBrush("AccentSubtleBgBrush");
         var parentBg = ThemeBinding.GetBrush("AccentSubtleBgBrush");
         var selected = ViewModel?.SelectedFile;
@@ -535,7 +531,7 @@ public partial class FileTreeView : ReactiveUserControl<FileTreeViewModel>
     /// </summary>
     private async Task<bool> ShowDeleteConfirmationAsync(FileTreeNode node)
     {
-        var warningBrush = (IBrush?)Application.Current!.Resources["WarningBrush"];
+        var warningBrush = ThemeBinding.GetBrush("WarningBrush");
         var messageText = node.IsDirectory
             ? $"Are you sure you want to permanently delete the folder '{node.Name}' and all of its contents?\n\n{node.FullPath}\n\nThis is a recursive deletion. All files and subfolders will be permanently removed. This action cannot be undone."
             : $"Are you sure you want to permanently delete '{node.Name}'?\n\n{node.FullPath}\n\nThis action cannot be undone.";

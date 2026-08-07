@@ -3,11 +3,22 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Lucide.Avalonia;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.App.Shell;
 
 public static class IconFactory
 {
+    /// <summary>
+    /// Creates an icon with a live theme brush binding on <see cref="LucideIcon.Foreground"/>.
+    /// </summary>
+    public static Control Create(string resourceKey, string foregroundBrushKey, double size = 16)
+    {
+        var icon = Create(resourceKey, foreground: null, size);
+        ThemeBinding.SetBrush(icon, LucideIcon.ForegroundProperty, foregroundBrushKey);
+        return icon;
+    }
+
     public static Control Create(string resourceKey, IBrush? foreground, double size = 16)
     {
         var kind = IconLucideMap.Resolve(resourceKey);

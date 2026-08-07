@@ -39,8 +39,9 @@ public class TerminalTabStrip : UserControl
 {
     private readonly StackPanel _tabsPanel;
     private readonly Button _newTabButton;
-    private readonly IBrush? _activeBrush;
     private readonly IBrush _inactiveBrush = Brushes.Transparent;
+
+    private static IBrush ActiveBrush => ThemeBinding.GetBrush("PrimaryAccentBrush");
 
     private ITerminalHost? _host;
     private readonly Dictionary<TerminalTabViewModel, Border> _items = new();
@@ -51,8 +52,6 @@ public class TerminalTabStrip : UserControl
 
     public TerminalTabStrip()
     {
-        _activeBrush = Avalonia.Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
-
         _tabsPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -85,12 +84,14 @@ public class TerminalTabStrip : UserControl
 
         var root = new Border
         {
-            Background = (IBrush?)Avalonia.Application.Current?.Resources["SurfaceBaseBrush"],
             Padding = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingXs, 0),
             Child = layout
         };
+        ThemeBinding.SetBrush(root, Border.BackgroundProperty, "SurfaceBaseBrush");
 
         Content = root;
+
+        ThemeBinding.SubscribeVariantChanged(this, () => SetActiveTab(_activeTab));
     }
 
     public void SetHost(ITerminalHost host)
@@ -126,7 +127,7 @@ public class TerminalTabStrip : UserControl
         _activeTab = tab;
         if (tab is not null && _items.TryGetValue(tab, out var active))
         {
-            active.Background = _activeBrush;
+            active.Background = ActiveBrush;
         }
     }
 
@@ -159,7 +160,7 @@ public class TerminalTabStrip : UserControl
         _items[tab] = item;
         _tabsPanel.Children.Add(item);
         if (_activeTab == tab)
-            item.Background = _activeBrush;
+            item.Background = ActiveBrush;
         SubscribeToTab(tab);
     }
 
@@ -229,7 +230,7 @@ public class TerminalTabStrip : UserControl
 
         var closeIcon = IconFactory.Create(
             "Icon.X",
-            (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
+            "TextSecondaryBrush",
             12);
         var closeButton = new Border
         {
@@ -300,7 +301,7 @@ public class TerminalTabStrip : UserControl
     {
         var plus = IconFactory.Create(
             "Icon.Plus",
-            (IBrush?)Avalonia.Application.Current?.Resources["TextSecondaryBrush"],
+            "TextSecondaryBrush",
             14);
         var button = new Button
         {

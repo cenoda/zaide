@@ -107,10 +107,10 @@ public partial class EditorTabBar : UserControl
         set => _unsubscribeEscapeAction = value;
     }
 
-    // Brushes resolved from app resources in constructor (not static —
-    // Avalonia.Application.Current may be null at type-init time in test harnesses).
-    private readonly IBrush? _activeTabBrush;
+    // Brushes resolved at apply time so variant flips repaint active tabs.
     private readonly IBrush? _inactiveTabBrush = Brushes.Transparent;
+
+    private static IBrush ActiveTabBrush => ThemeBinding.GetBrush("PrimaryAccentBrush");
 
     // ── Events ───────────────────────────────────────────────────────────
 
@@ -143,21 +143,16 @@ public partial class EditorTabBar : UserControl
             Spacing = LayoutTokens.SpacingNone
         };
 
-        // Resolve brushes now — safe because the constructor only runs when
-        // the control is created, which happens inside a running application.
-        _activeTabBrush = Avalonia.Application.Current?.Resources["PrimaryAccentBrush"] as IBrush;
-
-        // Phase 9 M5b: drop-position visual indicator.
-        // A thin vertical line shown at the target insertion point during drag.
+        // Drop-position visual indicator.
         _dropIndicator = new Border
         {
             Width = 2,
-            Background = _activeTabBrush,
             IsVisible = false,
             VerticalAlignment = VerticalAlignment.Stretch,
             HorizontalAlignment = HorizontalAlignment.Left,
             IsHitTestVisible = false
         };
+        ThemeBinding.SetBrush(_dropIndicator, Border.BackgroundProperty, "PrimaryAccentBrush");
 
         // Wrap tabs panel and drop indicator in a single-cell Grid so the
         // indicator can overlay the tabs at arbitrary positions.
@@ -187,7 +182,7 @@ public partial class EditorTabBar : UserControl
         // M4: "Shared in #townhall" label — right of tabs, SecondaryAccentBrush,
         // hidden by default. Visibility controlled by MainWindow via SetTownhallLinkVisible.
         _townhallLink = TextStyles.Body("Shared in #townhall");
-        _townhallLink.Foreground = (IBrush?)Avalonia.Application.Current?.Resources["SecondaryAccentBrush"];
+        ThemeBinding.SetBrush(_townhallLink, TextBlock.ForegroundProperty, "SecondaryAccentBrush");
         _townhallLink.VerticalAlignment = VerticalAlignment.Center;
         _townhallLink.Margin = LayoutTokens.Horizontal(LayoutTokens.SpacingMd);
         _townhallLink.IsVisible = false;
@@ -207,6 +202,8 @@ public partial class EditorTabBar : UserControl
         layout.Children.Add(_townhallLink);
 
         Content = layout;
+
+        ThemeBinding.SubscribeVariantChanged(this, () => SetActiveTab(_activeTab));
     }
 
     // ── Public API ───────────────────────────────────────────────────────
@@ -257,7 +254,7 @@ public partial class EditorTabBar : UserControl
 
         if (tab is not null && _tabItems.TryGetValue(tab, out var activeBorder))
         {
-            activeBorder.Background = _activeTabBrush;
+            activeBorder.Background = ActiveTabBrush;
             activeBorder.Opacity = 0.72;
             Animations.Transition(activeBorder, Animations.TabFadeIn());
         }
@@ -646,7 +643,7 @@ public partial class EditorTabBar : UserControl
     {
         var icon = IconFactory.Create(
             FileIconKeyResolver.GetIconKey(vm.FilePath),
-            (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
+            "TextSecondaryBrush",
             12);
 
         var label = new TextBlock
@@ -661,7 +658,7 @@ public partial class EditorTabBar : UserControl
 
         var closeGlyph = IconFactory.Create(
             "Icon.X",
-            (IBrush?)Avalonia.Application.Current!.Resources["SecondaryAccentBrush"],
+            "SecondaryAccentBrush",
             12);
 
         var closeButton = new Border
@@ -713,13 +710,13 @@ public partial class EditorTabBar : UserControl
         {
             Child = grid,
             Background = _inactiveTabBrush,
-            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["SurfaceBaseBrush"],
             BorderThickness = new Thickness(0, 0, 1, 0),
             Padding = LayoutTokens.NoneThickness,
             MinHeight = 36,
             Cursor = new Cursor(StandardCursorType.Hand),
             HorizontalAlignment = HorizontalAlignment.Left
         };
+        ThemeBinding.SetBrush(border, Border.BorderBrushProperty, "SurfaceBaseBrush");
 
         // Phase 9 M5b: Pointer-driven drag reorder.
         // PointerPressed records the start position and captures the pointer.

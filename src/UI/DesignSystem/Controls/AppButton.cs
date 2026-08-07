@@ -32,14 +32,14 @@ internal static class AppButton
         {
             Content = content,
             Height = height,
-            Background = ThemeBinding.GetBrush(AccentBrushKey),
-            Foreground = ThemeBinding.GetBrush("TextOnAccentBrush"),
             BorderThickness = LayoutTokens.NoneThickness,
             FontSize = TypographyTokens.FontSizeSm + 1,
             Cursor = TryCreateHandCursor(),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Theme = PrimaryButtonTheme,
         };
+        ThemeBinding.SetBrush(button, Button.BackgroundProperty, AccentBrushKey);
+        ThemeBinding.SetBrush(button, Button.ForegroundProperty, "TextOnAccentBrush");
         return button;
     }
 
@@ -52,7 +52,7 @@ internal static class AppButton
             LayoutTokens.SpacingSm,
             LayoutTokens.SpacingXxs));
         button.FontSize = fontSize;
-        button.Foreground = ThemeBinding.GetBrush("TextSecondaryBrush");
+        ThemeBinding.SetBrush(button, Button.ForegroundProperty, "TextSecondaryBrush");
         button.HorizontalAlignment = HorizontalAlignment.Right;
         button.VerticalAlignment = VerticalAlignment.Center;
         return button;
@@ -66,13 +66,13 @@ internal static class AppButton
             Content = content,
             Background = Brushes.Transparent,
             BorderThickness = LayoutTokens.NoneThickness,
-            Foreground = ThemeBinding.GetBrush("TextSecondaryBrush"),
             Padding = padding ?? LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
             CornerRadius = LayoutTokens.RadiusSm,
             Cursor = TryCreateHandCursor(),
             VerticalAlignment = VerticalAlignment.Center,
             Theme = GhostButtonTheme,
         };
+        ThemeBinding.SetBrush(button, Button.ForegroundProperty, "TextSecondaryBrush");
         return button;
     }
 
@@ -206,7 +206,7 @@ internal static class AppButton
     }
 
     private static DynamicResourceExtension DynamicBrush(string resourceKey) =>
-        new() { ResourceKey = resourceKey };
+        ThemeBinding.DynamicResource(resourceKey);
 
     private static Cursor? TryCreateHandCursor()
     {

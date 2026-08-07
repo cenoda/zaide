@@ -45,7 +45,6 @@ internal sealed class RightColumnHost
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) },
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             // M5-allow: M1 introduced the 1px panel seam as a visual divider, not semantic spacing.
             Margin = LayoutTokens.Inset(1, 0, 0, 0),
             Children =
@@ -56,6 +55,7 @@ internal sealed class RightColumnHost
                 WelcomeText,
             },
         };
+        ThemeBinding.SetBrush(editorPanel, Panel.BackgroundProperty, "SurfacePanelBrush");
         Grid.SetRow(EditorTabBar, 0);
         Grid.SetRow(SearchBar, 1);
         Grid.SetRow(EditorView, 2);

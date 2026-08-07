@@ -32,9 +32,9 @@ public sealed class EditorLanguagePickerPopup : Popup
         _header = new TextBlock
         {
             FontSize = 11,
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
             Margin = new Thickness(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
         };
+        ThemeBinding.SetBrush(_header, TextBlock.ForegroundProperty, "TextSecondaryBrush");
 
         _listBox = new ListBox
         {
@@ -72,13 +72,13 @@ public sealed class EditorLanguagePickerPopup : Popup
 
         var border = new Border
         {
-            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
-            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["BorderSubtleBrush"],
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = new Thickness(LayoutTokens.SpacingXxs),
             Child = panel,
         };
+        ThemeBinding.SetBrush(border, Border.BackgroundProperty, "SurfacePanelBrush");
+        ThemeBinding.SetBrush(border, Border.BorderBrushProperty, "BorderSubtleBrush");
 
         Child = border;
     }

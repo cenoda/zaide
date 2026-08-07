@@ -56,16 +56,17 @@ internal static class AppTextBox
 
     private static TextBox CreateBase(string? placeholder)
     {
-        return new TextBox
+        var textBox = new TextBox
         {
             PlaceholderText = placeholder ?? string.Empty,
-            Background = ThemeBinding.GetBrush(SurfaceRaised1BrushKey),
-            Foreground = ThemeBinding.GetBrush("TextPrimaryBrush"),
-            BorderBrush = ThemeBinding.GetBrush(BorderSubtleBrushKey),
             BorderThickness = LayoutTokens.NoneThickness,
             FontSize = TypographyTokens.FontSizeSm + 1,
             Theme = InputTheme,
         };
+        ThemeBinding.SetBrush(textBox, TextBox.BackgroundProperty, SurfaceRaised1BrushKey);
+        ThemeBinding.SetBrush(textBox, TextBox.ForegroundProperty, "TextPrimaryBrush");
+        ThemeBinding.SetBrush(textBox, TextBox.BorderBrushProperty, BorderSubtleBrushKey);
+        return textBox;
     }
 
     private static ControlTheme CreateInputTheme()
@@ -99,5 +100,5 @@ internal static class AppTextBox
     }
 
     private static DynamicResourceExtension DynamicBrush(string resourceKey) =>
-        new() { ResourceKey = resourceKey };
+        ThemeBinding.DynamicResource(resourceKey);
 }

@@ -40,13 +40,13 @@ public sealed class EditorCompletionPopup : Popup
 
         var border = new Border
         {
-            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
-            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["BorderSubtleBrush"],
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = new Thickness(LayoutTokens.SpacingXxs),
             Child = _listBox,
         };
+        ThemeBinding.SetBrush(border, Border.BackgroundProperty, "SurfacePanelBrush");
+        ThemeBinding.SetBrush(border, Border.BorderBrushProperty, "BorderSubtleBrush");
         AutomationProperties.SetName(border, "Completion popup");
 
         Child = border;

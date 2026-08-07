@@ -28,6 +28,7 @@ public class NavBar : Panel, IDisposable
     private readonly Control _explorerIcon;
     private readonly Control _sourceControlIcon;
     private CompositeDisposable? _disposables;
+    private bool _isExplorerActive = true;
 
     /// <summary>
     /// Binds to a MainWindowViewModel to drive mode switching.
@@ -46,42 +47,35 @@ public class NavBar : Panel, IDisposable
     public NavBar()
     {
         Width = 40;
-        Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfaceBaseBrush");
 
         // Active indicator: 3px-wide vertical bar on the left edge, 20px tall
         _explorerActiveIndicator = new Border
         {
             Width = 3,
             Height = 20,
-            Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
             CornerRadius = LayoutTokens.RadiusSm,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
             IsVisible = true // Explorer is active by default
         };
+        ThemeBinding.SetBrush(_explorerActiveIndicator, Border.BackgroundProperty, "PrimaryAccentBrush");
 
         _sourceControlActiveIndicator = new Border
         {
             Width = 3,
             Height = 20,
-            Background = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
             CornerRadius = LayoutTokens.RadiusSm,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             IsHitTestVisible = false,
             IsVisible = false
         };
+        ThemeBinding.SetBrush(_sourceControlActiveIndicator, Border.BackgroundProperty, "PrimaryAccentBrush");
 
-        _explorerIcon = IconFactory.Create(
-            "Icon.Explorer",
-            (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"],
-            16);
-
-        _sourceControlIcon = IconFactory.Create(
-            "Icon.SourceControl",
-            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            16);
+        _explorerIcon = IconFactory.Create("Icon.Explorer", "PrimaryAccentBrush", 16);
+        _sourceControlIcon = IconFactory.Create("Icon.SourceControl", "TextSecondaryBrush", 16);
 
         _explorerVisual = new Panel
         {
@@ -122,13 +116,16 @@ public class NavBar : Panel, IDisposable
         Children.Add(iconStack);
 
         // Separator on the right edge
-        Children.Add(new Border
+        var separator = new Border
         {
             Width = 1,
-            Background = (IBrush?)Application.Current!.Resources["SeparatorBrush"],
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Stretch
-        });
+        };
+        ThemeBinding.SetBrush(separator, Border.BackgroundProperty, "SeparatorBrush");
+        Children.Add(separator);
+
+        ThemeBinding.SubscribeVariantChanged(this, ApplyIconForegrounds);
 
         // Wire click handlers
         _explorerButton.PointerPressed += (_, _) =>
@@ -157,23 +154,26 @@ public class NavBar : Panel, IDisposable
                 .Subscribe(mode =>
                 {
                     var isExplorer = mode == LeftPanelMode.Explorer;
+                    _isExplorerActive = isExplorer;
 
                     // Active indicator visibility
                     _explorerActiveIndicator.IsVisible = isExplorer;
                     _sourceControlActiveIndicator.IsVisible = !isExplorer;
 
-                    // Icon color: PrimaryAccentBrush when active, TextSecondaryBrush when inactive
-                    IconFactory.SetForeground(
-                        _explorerIcon,
-                        (IBrush?)Application.Current!.Resources[
-                            isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"]);
-                    IconFactory.SetForeground(
-                        _sourceControlIcon,
-                        (IBrush?)Application.Current!.Resources[
-                            !isExplorer ? "PrimaryAccentBrush" : "TextSecondaryBrush"]);
+                    ApplyIconForegrounds();
 
                     _ = AnimateModeSwitchAsync(isExplorer);
                 }));
+    }
+
+    private void ApplyIconForegrounds()
+    {
+        IconFactory.SetForeground(
+            _explorerIcon,
+            ThemeBinding.GetBrush(_isExplorerActive ? "PrimaryAccentBrush" : "TextSecondaryBrush"));
+        IconFactory.SetForeground(
+            _sourceControlIcon,
+            ThemeBinding.GetBrush(_isExplorerActive ? "TextSecondaryBrush" : "PrimaryAccentBrush"));
     }
 
     private async Task AnimateModeSwitchAsync(bool isExplorer)

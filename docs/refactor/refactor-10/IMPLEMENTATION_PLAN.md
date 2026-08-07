@@ -3,7 +3,7 @@
 ## Status
 
 **In progress (2026-08-07).** M0–M3 and audit remediation **R1–R5** are done.
-**M4** (shared control layer) is in progress; **M4a**, **M4b**, and **M4c** are done.
+**M4** (shared control layer) is done; **M4a**, **M4b**, **M4c**, and **M4d** are done.
 
 Remediation detail and per-step prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
@@ -47,8 +47,9 @@ residual-debt rows below.
       (`Makefile` tracked as of R3). **CI does not invoke this guard yet.**
 - [x] R1: light `SurfaceOverlayBrush` is `#000000` @ 0.40 (dimming scrim).
 - [x] R2: editor TextMate uses `LightPlus` / `DarkPlus` from app variant.
-- [ ] **Deferred to M4:** full UI repaint on variant flip (one-shot
-      `ThemeBinding` + ~90 `Resources[]` indexer sites); mass hover unification.
+- [x] M4d (2026-08-07): live `ThemeBinding.SetBrush` / `SetColor` /
+      `SubscribeVariantChanged`; zero `Application.Current.Resources[]` indexer
+      sites remain in `src`; variant-repaint tests for bound control properties.
 - [ ] `TransparencyLevelHint` blur on dev compositor, or opaque fallback proven
       (M5 entry gate).
 
@@ -131,7 +132,7 @@ docs/refactor/refactor-10/archive/legacy-navy-palette.md
 | M1 | Theme variant infrastructure: `ThemeDictionaries`, `ThemeBinding`, variant pin removed, static brush caches eliminated | key-parity test; **full panel repaint on flip deferred to M4** |
 | M2 | Semantic tokens and both ramps authored, typography scale and elevation restored | contrast-ratio tests + `dotnet test Zaide.slnx --no-build` |
 | M3 | Partial literal migration; guard for Parse/FromArgb/FromRgb literals | `bash scripts/check-theme-tokens.sh` or `make check-theme-tokens` |
-| M4 | Shared control layer replaces per-panel hover code | full suite + hover/pressed/focus walkthrough |
+| M4 | Shared control layer replaces per-panel hover code | full suite + hover/pressed/focus walkthrough — **done** (M4a–M4d) |
 | M5 | Glass surfaces, elevation, radius and motion polish | main screens with and without blur + full suite |
 
 ### M0 — Entry gate (documentation only)
@@ -202,9 +203,24 @@ and allowlisted paths remain (see `TOFIX.md` M3 result).
   `TownhallView`, `BottomPanelHost`, `NavBar`, and `StatusBar`.
 
 **Exit:** identical hover/pressed/focus feedback across panels; no per-panel
-hover wiring remains in those files.
+hover wiring remains in those files; live theme binding on migrated surfaces;
+zero `Application.Current.Resources[]` indexer sites in `src` (M4d).
 
-### M5 — Glass, depth, and motion
+### M4d — Live theme binding and Resources[] migration (2026-08-07)
+
+- Extended `ThemeBinding` with `SetBrush`, `SetColor`, and
+  `SubscribeVariantChanged` for imperative surfaces and stateful repaint.
+- Migrated all ~86 `Application.Current.Resources[]` indexer sites (Priority A
+  shell/panels and Priority B editor/terminal/project-system surfaces).
+- Updated M4b factories (`AppButton`, `AppTextBox`, `ListRow`, `PanelChrome`)
+  to use live binding for token-backed surfaces.
+- Added `ThemeBindingVariantRepaintTests` asserting control property colors
+  change when `RequestedThemeVariant` flips Light/Dark.
+
+**Exit:** `rg 'Application\.Current.*Resources\[' src` returns 0; design-system
+variant-repaint tests green; `make check-theme-tokens` green.
+
+## M5 — Glass, depth, and motion
 
 - Set `TransparencyLevelHint` on `MainWindow` and add the `GlassSupport` probe.
 - Apply `SurfaceGlass` with `SurfaceGlassFallback` to the command palette,
@@ -236,7 +252,7 @@ hover wiring remains in those files.
 
 ## Exit Conditions
 
-Refactor-wide gates (M4/M5 still open):
+Refactor-wide gates (M5 still open):
 
 - [x] `RequestedThemeVariant="Dark"` removed; light renders by default
 - [x] Guard enforces `Color.Parse` hex and literal-channel `FromArgb` /
@@ -244,11 +260,14 @@ Refactor-wide gates (M4/M5 still open):
       zero-literal coverage (`Colors.*`, Thickness, unguarded forms remain)
 - [x] Zero `static readonly` brush fields in `src`
 - [x] Contrast ≥ 4.5:1 body text, ≥ 3:1 secondary text and borders (tests)
-- [x] `dotnet build Zaide.slnx` succeeds (verified through M3/R3)
-- [ ] `dotnet test Zaide.slnx --no-build` passes in full (re-verify at M4 close)
-- [ ] No layout breakage at 800×600 (re-verify at M4/M5)
-- [ ] Full panel repaint on variant flip (M4)
-- [ ] Shared control layer / hover unification (M4)
+- [x] `dotnet build Zaide.slnx` succeeds (verified through M4d)
+- [ ] `dotnet test Zaide.slnx --no-build` passes in full (re-verify at M5 close)
+- [ ] No layout breakage at 800×600 (re-verify at M5)
+- [x] Full panel repaint on variant flip for migrated surfaces (M4d;
+      `ThemeBinding.SetBrush` + `SubscribeVariantChanged`; residual
+      `ThemeBinding.GetBrush` one-shot only where callers re-apply on flip)
+- [x] Shared control layer / hover unification (M4a–M4c)
+- [x] Zero `Application.Current.Resources[]` indexer sites in `src` (M4d)
 - [ ] Glass, elevation, motion polish (M5)
 
 ## Rollback Plan

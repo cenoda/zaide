@@ -27,13 +27,13 @@ public sealed class EditorHoverPopup : Popup
 
         var border = new Border
         {
-            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
-            BorderBrush = (IBrush?)Avalonia.Application.Current!.Resources["BorderSubtleBrush"],
             BorderThickness = new Thickness(1),
             CornerRadius = LayoutTokens.RadiusSm,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
             Child = _textBlock,
         };
+        ThemeBinding.SetBrush(border, Border.BackgroundProperty, "SurfacePanelBrush");
+        ThemeBinding.SetBrush(border, Border.BorderBrushProperty, "BorderSubtleBrush");
         AutomationProperties.SetName(border, "Hover information");
         AutomationProperties.SetHelpText(border, "Read-only hover tooltip for the symbol under the caret.");
 

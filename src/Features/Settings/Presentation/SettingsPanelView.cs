@@ -61,7 +61,7 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
     {
         _settingsViewModel = viewModel;
         ViewModel = viewModel;
-        Background = (IBrush?)Application.Current?.Resources["SurfacePanelBrush"] ?? Brushes.Transparent;
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfacePanelBrush");
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
         VerticalContentAlignment = VerticalAlignment.Stretch;
 
@@ -412,15 +412,15 @@ public sealed class SettingsPanelView : ReactiveUserControl<SettingsViewModel>, 
             Spacing = LayoutTokens.SpacingSm
         };
         // Section header
-        panel.Children.Add(new TextBlock
+        var sectionHeader = new TextBlock
         {
             Text = title,
             FontSize = 12,
             FontWeight = FontWeight.SemiBold,
-            Foreground = (IBrush?)Application.Current?.Resources["TextPrimaryBrush"]
-                        ?? ThemeBinding.GetBrush("TextPrimaryBrush"),
             Margin = new Thickness(0, LayoutTokens.SpacingSm, 0, LayoutTokens.SpacingXxs)
-        });
+        };
+        ThemeBinding.SetBrush(sectionHeader, TextBlock.ForegroundProperty, "TextPrimaryBrush");
+        panel.Children.Add(sectionHeader);
         foreach (var child in children)
             panel.Children.Add(child);
         return panel;

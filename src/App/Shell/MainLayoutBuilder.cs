@@ -11,6 +11,7 @@ using Zaide.Features.Settings.Contracts;
 using Zaide.Features.SourceControl.Presentation;
 using Zaide.Features.Townhall.Presentation;
 using Zaide.Features.Workspace.Presentation;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.App.Shell;
 
@@ -57,8 +58,8 @@ internal sealed class MainLayoutBuilder
                 // 3: Status bar (24px, always visible)
                 new RowDefinition { Height = new GridLength(24, GridUnitType.Pixel) }
             },
-            Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"]
         };
+        ThemeBinding.SetBrush(grid, Panel.BackgroundProperty, "SurfaceBaseBrush");
 
         var bottomSplitterRow = grid.RowDefinitions[1];
         var bottomPanelRow = grid.RowDefinitions[2];

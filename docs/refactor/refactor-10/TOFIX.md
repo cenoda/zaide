@@ -3,9 +3,9 @@
 ## Status
 
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
-Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is in progress; **M4a** done (2026-08-07); **M4b** done (2026-08-07); **M4c** done (2026-08-07).
+Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is done; **M4a** done (2026-08-07); **M4b** done (2026-08-07); **M4c** done (2026-08-07); **M4d** done (2026-08-07).
 
-**Next task: M4d** — `Application.Current.Resources[]` indexer migration and full panel repaint on variant flip.
+**Next task: M5** — glass surfaces, elevation, radius and motion polish.
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -69,12 +69,12 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | R3 — strengthen guard + Makefile policy | done | `bash scripts/check-theme-tokens.sh`; `make check-theme-tokens` |
 | R4 — docs truth-sync | done | plan/TOFIX match live code |
 | R5 — optional polish | done | indent guide token, ThemeBinding flip smoke test, stale comments |
-| M4 — shared control layer | in progress | full suite + interaction walkthrough |
+| M4 — shared control layer | done | full suite + interaction walkthrough |
 | M4a — ControlThemeCatalog + focus ring | done | catalog registration smoke tests + build |
 | M4b — AppButton/AppTextBox/ListRow/PanelChrome | done | factory unit tests |
 | M4c — hover unification (panels) | done | walkthrough |
-| M4d — Resources[] indexer + variant flip repaint | next | full suite |
-| M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
+| M4d — Resources[] indexer + variant flip repaint | done | design-system repaint tests + zero Resources[] |
+| M5 — glass, depth, motion | next | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
 See `AUDIT_REMEDIATION_PLAN.md` for prompts and exit conditions.
@@ -169,8 +169,22 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
 ## Next task
 
-**M4d** — migrate remaining `Application.Current.Resources[]` indexer call sites and
-integrate full panel repaint on theme variant flip.
+**M5** — glass surfaces, elevation, radius and motion polish (`IMPLEMENTATION_PLAN.md` M5).
+
+## M4d result (2026-08-07)
+
+- Extended `ThemeBinding` with live `SetBrush` / `SetColor` (apply + re-apply on
+  `ActualThemeVariantChanged`) and `SubscribeVariantChanged` for stateful
+  imperative repaint (NavBar icons, tab strips, file-tree selection paint).
+- `IconFactory.Create(string, string brushKey, …)` binds icon foreground live.
+- Migrated all `Application.Current.Resources[]` indexer sites in `src` (Priority A
+  shell/panels + Priority B editor/terminal/project-system). **Residual count: 0.**
+- M4b factories use `SetBrush` for token-backed surfaces; interaction states
+  remain on `DynamicResourceExtension` in `ControlThemeCatalog`.
+- Added `ThemeBindingVariantRepaintTests` (border, text, `AppButton`, divider).
+- `GetBrush` / `GetColor` resolve via variant fallback order (actual → light →
+  default) so fresh test apps without a pinned variant still resolve tokens.
+- Build, design-system tests (51), and `check-theme-tokens.sh` verified at M4d close.
 
 ## M4c result (2026-08-07)
 

@@ -69,13 +69,13 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
             Content = "Logs",
             FontSize = 12,
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),
-            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"],
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
             BorderThickness = LayoutTokens.NoneThickness,
             CornerRadius = LayoutTokens.RadiusSm,
             Cursor = new Cursor(StandardCursorType.Hand),
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingSm, 0, 0, 0)
         };
+        ThemeBinding.SetBrush(_toggleViewButton, Button.BackgroundProperty, "SurfacePanelBrush");
+        ThemeBinding.SetBrush(_toggleViewButton, Button.ForegroundProperty, "TextSecondaryBrush");
 
         _clearButton = BuildToolbarButton("Icon.Broom", "Clear");
         _restartButton = BuildToolbarButton("Icon.ArrowClockwise", "Restart");
@@ -149,10 +149,10 @@ public class TerminalPanel : ReactiveUserControl<TerminalViewModel>
 
         var toolbar = new Border
         {
-            Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfaceBaseBrush"],
             Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingSm - LayoutTokens.SpacingXxs),
             Child = toolbarGrid
         };
+        ThemeBinding.SetBrush(toolbar, Border.BackgroundProperty, "SurfaceBaseBrush");
 
         // ── Log list view ──────────────────────────────────────────
         _logListBox = new ListBox

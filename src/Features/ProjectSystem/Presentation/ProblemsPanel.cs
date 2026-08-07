@@ -27,7 +27,7 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
 
     public ProblemsPanel()
     {
-        Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"];
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfacePanelBrush");
 
         var title = TextStyles.Header("Problems");
         _countText = TextStyles.Caption("0");
@@ -55,12 +55,12 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
         {
             Text = "No problems detected.\n\nWrite code or build the project to see diagnostics here.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
             IsVisible = false,
         };
+        ThemeBinding.SetBrush(_emptyStateText, TextBlock.ForegroundProperty, "TextSecondaryBrush");
 
         _list = new ListBox
         {
@@ -81,8 +81,8 @@ public sealed class ProblemsPanel : ReactiveUserControl<ProblemsViewModel>
                     Text = item.DisplayText,
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 12,
-                    Foreground = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
                 };
+                ThemeBinding.SetBrush(text, TextBlock.ForegroundProperty, "TextPrimaryBrush");
                 return new Border
                 {
                     Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),

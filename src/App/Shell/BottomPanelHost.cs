@@ -127,13 +127,13 @@ internal sealed class BottomPanelHost
 
         PanelBorder = new Border
         {
-            Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"],
             Padding = LayoutTokens.NoneThickness,
             // M5-allow: M1 introduced the 1px top seam above the bottom panel to preserve the raised-layer split.
             Margin = LayoutTokens.Inset(0, 1, 0, 0),
             Child = bottomContent,
             IsVisible = false,
         };
+        ThemeBinding.SetBrush(PanelBorder, Border.BackgroundProperty, "SurfacePanelBrush");
     }
 
     public TerminalTabHost TerminalTabHost { get; }
@@ -205,9 +205,9 @@ internal sealed class BottomPanelHost
         if (button is null)
             return;
 
-        var activeBrush = (IBrush?)Application.Current!.Resources["TextPrimaryBrush"] ?? Brushes.White;
-        var inactiveBrush = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"] ?? Brushes.Gray;
-        var accentBrush = (IBrush?)Application.Current!.Resources["AccentBrush"] ?? Brushes.CornflowerBlue;
+        var activeBrush = ThemeBinding.GetBrush("TextPrimaryBrush");
+        var inactiveBrush = ThemeBinding.GetBrush("TextSecondaryBrush");
+        var accentBrush = ThemeBinding.GetBrush("AccentBrush");
 
         button.Foreground = isActive ? activeBrush : inactiveBrush;
         button.BorderBrush = isActive ? accentBrush : Brushes.Transparent;

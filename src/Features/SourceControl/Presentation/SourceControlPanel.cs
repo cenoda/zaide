@@ -42,7 +42,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 
     public SourceControlPanel()
     {
-        Background = (IBrush?)Avalonia.Application.Current!.Resources["SurfacePanelBrush"];
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfacePanelBrush");
 
         // --- Header ---
         var title = TextStyles.Header("Source Control");
@@ -58,7 +58,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         var refreshButton = AppButton.Icon(
             IconFactory.Create(
                 "Icon.ArrowClockwise",
-                (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
+                "TextSecondaryBrush",
                 16));
         ToolTip.SetTip(refreshButton, "Refresh source control");
         AutomationProperties.SetName(refreshButton, "Refresh source control");
@@ -72,9 +72,9 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
             Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingMd),
             PlaceholderText = "Select branch",
             Background = ThemeBinding.GetBrush("OverlayHoverBrush"),
-            Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextPrimaryBrush"],
             FontSize = 13
         };
+        ThemeBinding.SetBrush(_branchSelector, ComboBox.ForegroundProperty, "TextPrimaryBrush");
 
         // --- Unstaged Changes Header (caption + Stage All) ---
         _unstagedHeader = TextStyles.Caption("Unstaged Changes");
@@ -99,7 +99,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
         // --- Status Message (non-repo / error notice; hidden on success) ---
         _statusMessage = TextStyles.Body("");
         _statusMessage.Margin = LayoutTokens.Inset(LayoutTokens.SpacingMd, 0, LayoutTokens.SpacingMd, LayoutTokens.SpacingSm);
-        _statusMessage.Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"];
+        ThemeBinding.SetBrush(_statusMessage, TextBlock.ForegroundProperty, "TextSecondaryBrush");
         _statusMessage.IsVisible = false;
         _statusMessage.TextWrapping = Avalonia.Media.TextWrapping.Wrap;
 
@@ -342,8 +342,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                     }
                     else if (!string.IsNullOrEmpty(notice))
                     {
-                        _commitErrorText.Foreground =
-                            (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"];
+                        _commitErrorText.Foreground = ThemeBinding.GetBrush("TextSecondaryBrush");
                         _commitErrorText.Text = notice;
                         _commitErrorText.IsVisible = true;
                     }
@@ -426,7 +425,7 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
 
             var fileIcon = IconFactory.Create(
                 FileIconKeyResolver.GetIconKey(change.FilePath),
-                (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
+                "TextSecondaryBrush",
                 12);
 
             // File path
@@ -443,13 +442,13 @@ public class SourceControlPanel : ReactiveUserControl<SourceControlViewModel>
                 FontSize = 12,
                 Padding = LayoutTokens.NoneThickness,
                 Background = Brushes.Transparent,
-                Foreground = (IBrush?)Avalonia.Application.Current!.Resources["TextSecondaryBrush"],
                 BorderThickness = LayoutTokens.NoneThickness,
                 Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
                 Tag = change
             };
+            ThemeBinding.SetBrush(stageButton, Button.ForegroundProperty, "TextSecondaryBrush");
             stageButton.Click += (_, _) =>
             {
                 if (change is null) return;

@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Zaide.Features.Settings.Contracts;
+using Zaide.UI.DesignSystem;
 
 namespace Zaide.Features.Terminal.Presentation;
 
@@ -66,9 +67,9 @@ public class TerminalTabHost : UserControl, IDisposable
                 new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }
             },
-            Background = (IBrush?)Avalonia.Application.Current?.Resources["SurfacePanelBrush"],
             Children = { _strip, _content }
         };
+        ThemeBinding.SetBrush(grid, Panel.BackgroundProperty, "SurfacePanelBrush");
         Grid.SetRow(_strip, 0);
         Grid.SetRow(_content, 1);
 

@@ -152,5 +152,5 @@ internal static class ControlThemeCatalog
     }
 
     private static DynamicResourceExtension DynamicBrush(string resourceKey) =>
-        new() { ResourceKey = resourceKey };
+        ThemeBinding.DynamicResource(resourceKey);
 }

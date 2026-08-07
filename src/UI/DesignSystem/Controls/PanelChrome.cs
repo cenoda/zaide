@@ -11,13 +11,16 @@ namespace Zaide.UI.DesignSystem;
 internal static class PanelChrome
 {
     /// <summary>1px horizontal separator using <c>SeparatorBrush</c>.</summary>
-    internal static Border Divider() =>
-        new()
+    internal static Border Divider()
+    {
+        var divider = new Border
         {
             Height = 1,
-            Background = ThemeBinding.GetBrush("SeparatorBrush"),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        ThemeBinding.SetBrush(divider, Border.BackgroundProperty, "SeparatorBrush");
+        return divider;
+    }
 
     /// <summary>Caption-style empty-state message.</summary>
     internal static TextBlock EmptyState(string message)
@@ -78,12 +81,15 @@ internal static class PanelChrome
         SectionHeader(SectionTitle(title), trailing, margin);
 
     /// <summary>Dock-top header bar with bottom separator border.</summary>
-    internal static Border HeaderBar(Control child, Thickness? padding = null) =>
-        new()
+    internal static Border HeaderBar(Control child, Thickness? padding = null)
+    {
+        var bar = new Border
         {
             Child = child,
             Padding = padding ?? LayoutTokens.Inset(0, 0, 0, LayoutTokens.SpacingXs),
-            BorderBrush = ThemeBinding.GetBrush("SeparatorBrush"),
             BorderThickness = new Thickness(0, 0, 0, 1),
         };
+        ThemeBinding.SetBrush(bar, Border.BorderBrushProperty, "SeparatorBrush");
+        return bar;
+    }
 }

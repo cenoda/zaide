@@ -28,7 +28,7 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
 
     public TestResultsPanel()
     {
-        Background = (IBrush?)Application.Current!.Resources["SurfacePanelBrush"];
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfacePanelBrush");
 
         var title = TextStyles.Header("Test Results");
 
@@ -67,12 +67,12 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
         {
             Text = "No test results yet.\n\nRun tests to see results here.",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingLg, LayoutTokens.SpacingLg),
             IsVisible = true,
         };
+        ThemeBinding.SetBrush(_emptyStateText, TextBlock.ForegroundProperty, "TextSecondaryBrush");
 
         _list = new ListBox
         {
@@ -93,10 +93,11 @@ public sealed class TestResultsPanel : ReactiveUserControl<TestResultsViewModel>
                     Text = item!.DisplayText,
                     TextWrapping = TextWrapping.Wrap,
                     FontSize = 12,
-                    Foreground = item.Result.Outcome == TestCaseOutcome.Failed
-                        ? Brushes.OrangeRed
-                        : (IBrush?)Application.Current!.Resources["TextPrimaryBrush"],
                 };
+                if (item.Result.Outcome == TestCaseOutcome.Failed)
+                    text.Foreground = Brushes.OrangeRed;
+                else
+                    ThemeBinding.SetBrush(text, TextBlock.ForegroundProperty, "TextPrimaryBrush");
                 return new Border
                 {
                     Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),

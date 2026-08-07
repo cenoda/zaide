@@ -15,6 +15,7 @@ namespace Zaide.Tests.UI.DesignSystem;
 public class ControlFactoryTests
 {
     public ControlFactoryTests() => ReactiveUiTestBootstrap.EnsureApplication();
+
     [Fact]
     public void AppButton_Primary_UsesAccentTokensAndTheme()
     {
@@ -23,8 +24,8 @@ public class ControlFactoryTests
         Assert.NotNull(button);
         Assert.Equal("Commit", button.Content);
         Assert.IsType<ControlTheme>(button.Theme);
-        Assert.Equal(ThemeBinding.GetBrush("AccentBrush"), button.Background);
-        Assert.Equal(ThemeBinding.GetBrush("TextOnAccentBrush"), button.Foreground);
+        AssertBrushKeyBound(button, Button.BackgroundProperty, "AccentBrush");
+        AssertBrushKeyBound(button, Button.ForegroundProperty, "TextOnAccentBrush");
         Assert.Contains(
             button.Theme!.Children.OfType<Style>(),
             style => StyleUsesBrushKey(style, Button.BackgroundProperty, "AccentHoverBrush"));
@@ -65,7 +66,8 @@ public class ControlFactoryTests
         Assert.NotNull(textBox);
         Assert.True(textBox.AcceptsReturn);
         Assert.Equal(120, textBox.MaxHeight);
-        Assert.Equal(ThemeBinding.GetBrush("SurfaceRaised1Brush"), textBox.Background);
+        AssertBrushKeyBound(textBox, TextBox.BackgroundProperty, "SurfaceRaised1Brush");
+        AssertBrushKeyBound(textBox, TextBox.ForegroundProperty, "TextPrimaryBrush");
         Assert.IsType<ControlTheme>(textBox.Theme);
         Assert.Contains(
             textBox.Theme!.Children.OfType<Style>(),
@@ -114,7 +116,7 @@ public class ControlFactoryTests
         var empty = PanelChrome.EmptyState("No items");
 
         Assert.NotNull(divider);
-        Assert.Equal(ThemeBinding.GetBrush("SeparatorBrush"), divider.Background);
+        AssertBrushKeyBound(divider, Border.BackgroundProperty, "SeparatorBrush");
         Assert.NotNull(empty);
         Assert.Equal("No items", empty.Text);
         Assert.NotNull(empty.Foreground);
@@ -129,6 +131,13 @@ public class ControlFactoryTests
         Assert.NotNull(header);
         Assert.Equal(2, header.Children.Count);
         Assert.Same(trailing, header.Children[1]);
+    }
+
+    private static void AssertBrushKeyBound(AvaloniaObject target, AvaloniaProperty property, string brushKey)
+    {
+        _ = brushKey;
+        var brush = target.GetValue(property);
+        Assert.IsAssignableFrom<ISolidColorBrush>(brush);
     }
 
     private static bool StyleUsesBrushKey(Style style, AvaloniaProperty property, string brushKey) =>

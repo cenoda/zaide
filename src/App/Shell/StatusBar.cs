@@ -33,20 +33,14 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private readonly Button _settingsButton;
     private readonly Control _settingsIcon;
     private readonly TextBlock _settingsAppNameText;
-    private IBrush? _settingsActiveBackground;
-    private IBrush SettingsActiveBackground => _settingsActiveBackground ??= ThemeBinding.GetBrush("OverlaySelectedBrush");
     private bool _isSettingsButtonActive;
 
     public StatusBar()
     {
         Height = 24;
-        Background = (IBrush?)Application.Current!.Resources["SurfaceBaseBrush"];
-        ActualThemeVariantChanged += (_, _) => _settingsActiveBackground = null;
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfaceBaseBrush");
 
-        _settingsIcon = IconFactory.Create(
-            "Icon.Config",
-            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-            14);
+        _settingsIcon = IconFactory.Create("Icon.Config", "TextSecondaryBrush", 14);
 
         _settingsAppNameText = TextStyles.Brand("Zaide");
         _settingsAppNameText.VerticalAlignment = VerticalAlignment.Center;
@@ -58,7 +52,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         _modelText.HorizontalAlignment = HorizontalAlignment.Right;
         _modelText.VerticalAlignment = VerticalAlignment.Center;
         _modelText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
-        _modelText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        ThemeBinding.SetBrush(_modelText, TextBlock.ForegroundProperty, "TextSecondaryBrush");
 
         // Settings is the only interactive segment (OpenSettingsCommand).
         _settingsButton = AppButton.Ghost(new StackPanel
@@ -70,14 +64,13 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
         ToolTip.SetTip(_settingsButton, "Settings");
         Avalonia.Automation.AutomationProperties.SetName(_settingsButton, "Settings");
 
-        _languageIntelligenceText.Foreground =
-            (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        ThemeBinding.SetBrush(_languageIntelligenceText, TextBlock.ForegroundProperty, "TextSecondaryBrush");
         _languageIntelligenceSegment = BuildStatusSegment("Icon.Code", _languageIntelligenceText);
         _languageIntelligenceSegment.IsVisible = false;
 
         // Transient "Opened: …" / save/search feedback. Bare TextBlocks default to
         // Stretch and paint text at the top unless centered.
-        _statusMessageText.Foreground = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        ThemeBinding.SetBrush(_statusMessageText, TextBlock.ForegroundProperty, "TextSecondaryBrush");
         _statusMessageText.VerticalAlignment = VerticalAlignment.Center;
         _statusMessageText.Margin = LayoutTokens.Inset(0, 0, LayoutTokens.SpacingMd, 0);
         _statusMessageText.MaxWidth = 320;
@@ -121,6 +114,12 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
 
         Content = layout;
 
+        ThemeBinding.SubscribeVariantChanged(this, () =>
+        {
+            ApplySettingsButtonVisualState(_isSettingsButtonActive);
+            UpdateSettingsButtonBackground();
+        });
+
         // --- Reactive Bindings ---
         this.WhenActivated(d =>
         {
@@ -162,8 +161,8 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private void ApplySettingsButtonVisualState(bool isActive)
     {
         _isSettingsButtonActive = isActive;
-        var accentBrush = (IBrush?)Application.Current!.Resources["PrimaryAccentBrush"];
-        var secondaryBrush = (IBrush?)Application.Current!.Resources["TextSecondaryBrush"];
+        var accentBrush = ThemeBinding.GetBrush("PrimaryAccentBrush");
+        var secondaryBrush = ThemeBinding.GetBrush("TextSecondaryBrush");
         IconFactory.SetForeground(_settingsIcon, isActive ? accentBrush : secondaryBrush);
         _settingsAppNameText.Foreground = isActive ? accentBrush : secondaryBrush;
     }
@@ -171,7 +170,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
     private void UpdateSettingsButtonBackground()
     {
         _settingsButton.Background = _isSettingsButtonActive
-            ? SettingsActiveBackground
+            ? ThemeBinding.GetBrush("OverlaySelectedBrush")
             : Brushes.Transparent;
     }
 
@@ -190,10 +189,7 @@ public class StatusBar : ReactiveUserControl<StatusBarViewModel>
             Margin = LayoutTokens.Symmetric(LayoutTokens.SpacingXs, LayoutTokens.SpacingXxs),
             Children =
             {
-                IconFactory.Create(
-                    iconKey,
-                    (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
-                    12),
+                IconFactory.Create(iconKey, "TextSecondaryBrush", 12),
                 text
             }
         };

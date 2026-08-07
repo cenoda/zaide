@@ -27,8 +27,7 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
 
     public OutputPanel()
     {
-        Background = (IBrush?)Application.Current?.Resources["SurfacePanelBrush"]
-            ?? Brushes.Transparent;
+        ThemeBinding.SetBrush(this, BackgroundProperty, "SurfacePanelBrush");
 
         var title = TextStyles.Header("Output");
 
@@ -88,11 +87,11 @@ public sealed class OutputPanel : ReactiveUserControl<ProjectWorkflowViewModel>
                     TextWrapping = TextWrapping.Wrap,
                     FontFamily = new FontFamily("monospace"),
                     FontSize = 12,
-                    Foreground = item.StreamTag == "stderr"
-                        ? Brushes.OrangeRed
-                        : (IBrush?)Application.Current?.Resources["TextPrimaryBrush"]
-                            ?? Brushes.White,
                 };
+                if (item.StreamTag == "stderr")
+                    text.Foreground = Brushes.OrangeRed;
+                else
+                    ThemeBinding.SetBrush(text, TextBlock.ForegroundProperty, "TextPrimaryBrush");
                 return new Border
                 {
                     Padding = LayoutTokens.Symmetric(LayoutTokens.SpacingSm, LayoutTokens.SpacingXxs),

@@ -35,7 +35,7 @@ public class TownhallPeoplePanel : Panel
                 TextStyles.Header("People"),
                 IconFactory.Create(
                     "Icon.Bell",
-                    (IBrush?)Application.Current!.Resources["TextSecondaryBrush"],
+                    "TextSecondaryBrush",
                     14)
             }
         };
