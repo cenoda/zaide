@@ -196,7 +196,8 @@ public sealed class ArchitectureVisibilityTests
         // Refactor 10 M2: +1 Elevation.cs (6).
         Assert.Equal(43, inventory.SourceFiles.Count(f => f.TechnicalFolder == "App"));
         // Refactor 10 M4a: +1 ControlThemeCatalog.cs (7).
-        Assert.Equal(7, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
+        // Refactor 10 M4b: +4 AppButton/AppTextBox/ListRow/PanelChrome (11).
+        Assert.Equal(11, inventory.SourceFiles.Count(f => f.TechnicalFolder == "UI"));
         // Refactor 7 M5b: +1 output projection production file.
         // Phase 14 M1: +1 DirectParticipantPairKey production file.
         // Phase 14 M3: +1 internal TownhallChatScrollPolicy production file.

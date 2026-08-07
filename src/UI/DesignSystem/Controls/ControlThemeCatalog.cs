@@ -50,6 +50,25 @@ internal static class ControlThemeCatalog
     internal static void ResetRegistrationForTests() =>
         Registered.Clear();
 
+    /// <summary>
+    /// Applies the shared interactive surface theme and style class to a
+    /// <see cref="Border"/> host (list rows, icon surfaces).
+    /// </summary>
+    internal static void ApplyInteractiveSurface(Border border)
+    {
+        border.Classes.Add(InteractiveClass);
+
+        var app = ResolveApplication();
+        if (app?.Resources.TryGetValue(InteractiveSurfaceThemeKey, out var theme) == true
+            && theme is ControlTheme controlTheme)
+        {
+            border.Theme = controlTheme;
+        }
+    }
+
+    private static Application? ResolveApplication() =>
+        Application.Current as Application ?? ThemeBinding.TestApplication;
+
     private static void RegisterResources(Application app)
     {
         app.Resources[InteractiveSurfaceThemeKey] = CreateInteractiveSurfaceTheme();

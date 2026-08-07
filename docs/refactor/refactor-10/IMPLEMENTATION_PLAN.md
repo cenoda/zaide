@@ -3,7 +3,8 @@
 ## Status
 
 **In progress (2026-08-07).** M0–M3 and audit remediation **R1–R5** are done.
-**M4** (shared control layer) is in progress; **M4a** (catalog skeleton + focus ring) is done.
+**M4** (shared control layer) is in progress; **M4a** (catalog skeleton + focus ring) and
+**M4b** (control factories) are done.
 
 Remediation detail and per-step prompts: `AUDIT_REMEDIATION_PLAN.md`.
 

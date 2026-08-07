@@ -3,9 +3,9 @@
 ## Status
 
 M0 (plan and archive) through M3 (literal replacement and guard) are implemented.
-Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is in progress; **M4a** done (2026-08-07).
+Post-M3 audit remediation **R1–R5** is complete (2026-08-07). **M4** (shared control layer) is in progress; **M4a** done (2026-08-07); **M4b** done (2026-08-07).
 
-**Next task: M4b** — `AppButton`, `AppTextBox`, `ListRow`, `PanelChrome` factories.
+**Next task: M4c** — panel hover unification (`SourceControlPanel`, `FileTreeView`, `Townhall*`, `BottomPanelHost`, `NavBar`, `StatusBar`).
 
 Refactor 10 was re-scoped on 2026-08-06. The previous content of
 `IMPLEMENTATION_PLAN.md` described F8 image preview and accessibility work; that
@@ -71,8 +71,8 @@ Documentation-only milestone, so no build or test gate applies. The baseline
 | R5 — optional polish | done | indent guide token, ThemeBinding flip smoke test, stale comments |
 | M4 — shared control layer | in progress | full suite + interaction walkthrough |
 | M4a — ControlThemeCatalog + focus ring | done | catalog registration smoke tests + build |
-| M4b — AppButton/AppTextBox/ListRow/PanelChrome | next | factory unit tests |
-| M4c — hover unification (panels) | pending | walkthrough |
+| M4b — AppButton/AppTextBox/ListRow/PanelChrome | done | factory unit tests |
+| M4c — hover unification (panels) | next | walkthrough |
 | M5 — glass, depth, motion | pending | main screens with and without blur + full suite |
 
 \*M1/M3 “done” means the milestone commits landed; audit findings are R1–R4.
@@ -168,8 +168,21 @@ Plan and per-step agent prompts: `AUDIT_REMEDIATION_PLAN.md`.
 
 ## Next task
 
-**M4b** — `AppButton`, `AppTextBox`, `ListRow`, and `PanelChrome` factories on top of
-`ControlThemeCatalog`. Required before M4c panel hover migration.
+**M4c** — replace per-panel hover wiring in `SourceControlPanel`, `FileTreeView`,
+`TownhallView` / `Townhall*`, `BottomPanelHost`, `NavBar`, and `StatusBar` with the
+M4b factories and `ControlThemeCatalog` interaction layer.
+
+## M4b result (2026-08-07)
+
+- Added internal factories under `src/UI/DesignSystem/Controls/`:
+  - `AppButton` — `Primary`, `Secondary`, `Ghost`, `Icon`, `ToolbarLabel`, `IconSurface`
+  - `AppTextBox` — `Input`, `Search`, `Inline`
+  - `ListRow` — `Create`, `SetSelected`, `DefaultPadding`
+  - `PanelChrome` — `Divider`, `EmptyState`, `SectionTitle`, `SectionHeader`, `HeaderBar`
+- `ControlThemeCatalog.ApplyInteractiveSurface` wires `zaide-interactive` +
+  `Zaide.ControlTheme.InteractiveSurface` on row/icon hosts.
+- `ControlFactoryTests` smoke coverage for factory creation, token hooks, and catalog classes.
+- Build clean; design-system tests green; theme-token guard passes.
 
 ## M4a result (2026-08-07)
 
